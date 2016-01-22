@@ -1,6 +1,7 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'me.tatarka.retrolambda'
+apply plugin: 'com.github.mitchwongho.appversion'
 
 buildscript {
     ext.kotlin_version = '1.0.0-beta-4584'
@@ -15,6 +16,7 @@ buildscript {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath "org.jetbrains.kotlin:kotlin-android-extensions:$kotlin_version"
         classpath "me.tatarka:gradle-retrolambda:$retrolambda_version"
+        classpath 'com.github.mitchwongho.gradle:appversion-plugin:0.1.0'
     }
 }
 
@@ -26,8 +28,8 @@ android {
         applicationId "com.github.mitchwongho.android.beacon"
         minSdkVersion 19
         targetSdkVersion 23
-        versionCode 1
-        versionName "1.0"
+        versionCode project.appversion.code
+        versionName project.appversion.name
     }
     buildTypes {
         release {
