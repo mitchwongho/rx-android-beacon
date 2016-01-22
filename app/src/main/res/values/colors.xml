@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#f64cbd</color>
+    <color name="colorPrimaryDark">#9f3080</color>
+    <color name="colorAccent">#a9ff40</color>
+
+    <color name="statusExcellent">@android:color/white</color>
+    <color name="statusGood">#ddff8c</color>
+    <color name="statusOkay">#ffd341</color>
+    <color name="statusPoor">#ff9456</color>
+    <color name="statusBad">#ff655d</color>
+</resources>
