@@ -1,3 +1,22 @@
 <resources>
     <string name="app_name">Beacon</string>
+    <string name="scanning_library">Scanning library</string>
+    <string name="std_ble_library">Standard BLE library</string>
+    <string name="alt_ble_library">AltBeacon BLE library</string>
+    <string name="settings">Settings</string>
+    <string name="scan_on_period">Scan On Period</string>
+    <string name="scan_off_period">Scan Off Period</string>
+    <string name="clear">Clear</string>
+    <string name="mode">Mode</string>
+    <string name="ibeacon_receiver">iBeacon Receiver</string>
+    <string name="ibeacon_emitter">iBeacon Emitter</string>
+    <string name="radio_off_period">Restart Radio Period</string>
+    <string name="ranging_timeout">Ranging Timeout</string>
+    <string name="profile_layouts">Profile Layouts</string>
+    <string name="add_profile_layout">Add Profile Layout</string>
+    <string name="profile_name">Profile Name</string>
+    <string name="profile_layout">Profile Layout</string>
+    <string name="save">Save</string>
+    <string name="bluetooth_disabled">Bluetooth disabled</string>
+    <string name="turn_on">Turn on</string>
 </resources>

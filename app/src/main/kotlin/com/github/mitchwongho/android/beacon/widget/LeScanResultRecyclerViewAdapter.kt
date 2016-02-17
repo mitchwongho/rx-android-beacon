@@ -10,34 +10,38 @@ import android.view.ViewGroup
 import android.widget.TextView
 import com.github.mitchwongho.android.beacon.R
 import com.github.mitchwongho.android.beacon.bluetooth.rx.LeScanResult
+import com.github.mitchwongho.android.beacon.ext.FilterType
 import com.github.mitchwongho.android.beacon.ext.setCardBackgroundColorCompat
 import kotlinx.android.synthetic.main.layout_card.view.*
+import java.util.*
 
 /**
  *
  */
-public class SimpleAdapter(val beacons: MutableList<LeScanResult>, val context: Context) : RecyclerView.Adapter<SimpleAdapter.ViewHolder>() {
+class LeScanResultRecyclerViewAdapter(val beacons: MutableList<LeScanResult>, val context: Context) : RecyclerView.Adapter<LeScanResultRecyclerViewAdapter.ViewHolder>() {
 
-    val TAG = SimpleAdapter::class.java.simpleName
+    val TAG = LeScanResultRecyclerViewAdapter::class.java.simpleName
 
     inner class ViewHolder(card: View) : RecyclerView.ViewHolder(card) {
-        public val card: CardView = card.card_view
-        public val name: TextView = card.device_name
-        public val deviceId: TextView = card.device_id
-        public val rssi: TextView = card.device_rssi
-        public val age: TextView = card.update_age
-        public val oob: TextView = card.oob
+        val card: CardView = card.card_view
+        val name: TextView = card.device_name
+        val deviceId: TextView = card.device_id
+        val rssi: TextView = card.device_rssi
+        val age: TextView = card.update_age
+        val oob: TextView = card.oob
     }
 
     override fun getItemCount(): Int = beacons.size
 
     override fun onBindViewHolder(holder: ViewHolder?, position: Int) {
         val beacon = beacons[position]
-        holder?.name?.text = beacon.bluetoothDevice.name
-        holder?.deviceId?.text = beacon.bluetoothDevice.address
+        holder?.name?.text = beacon.deviceName
+        holder?.deviceId?.text = beacon.deviceAddress
         holder?.rssi?.text = beacon.rssi.toString()
         holder?.age?.text = beacon.age.toString()
         if (beacon.oob > 0) holder?.oob?.text = beacon.oob.toString()
+        else holder?.oob?.text = ""
+        // apply background
         when (beacon.age) {
             in 0..1999 -> holder?.card?.setCardBackgroundColorCompat(R.color.statusExcellent)
             in 2000..19999 -> holder?.card?.setCardBackgroundColorCompat(R.color.statusGood)
@@ -52,15 +56,28 @@ public class SimpleAdapter(val beacons: MutableList<LeScanResult>, val context: 
         return ViewHolder(card)
     }
 
-    public fun applyList(list: List<LeScanResult>) {
+    fun applyList(list: List<LeScanResult>, filterType: FilterType) {
         beacons.clear()
-        beacons.addAll(list.sortedWith(comparator { a, b ->
-            if (a.timestamp > b.timestamp)
-                1
-            else if (b.timestamp > a.timestamp)
-                -1
-            else
-                0
+        beacons.addAll(list.sortedWith(Comparator { a, b ->
+            when (filterType) {
+                FilterType.TIMEOUT -> {
+                    if (a.timestamp > b.timestamp)
+                        1
+                    else if (b.timestamp > a.timestamp)
+                        -1
+                    else
+                        0
+                }
+                FilterType.RSSI -> {
+                    if (a.rssi > b.rssi)
+                        1
+                    else if (b.rssi > a.rssi)
+                        -1
+                    else
+                        0
+                }
+                else -> 0
+            }
         }))
         Log.d(TAG, "applyList {count=${beacons.size}}")
         notifyDataSetChanged()

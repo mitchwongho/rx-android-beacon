@@ -12,6 +12,7 @@
     android:layout_marginBottom="4dp"
     app:contentPadding="4dp"
     android:clickable="true"
+    android:focusableInTouchMode="true"
     android:foreground="?attr/selectableItemBackground">
 
     <RelativeLayout

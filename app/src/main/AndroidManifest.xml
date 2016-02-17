@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.github.mitchwongho.android.beacon">
 
+    <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.BLUETOOTH"/>
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
     <uses-feature android:name="android.hardware.bluetooth_le" android:required="true"/>
@@ -21,6 +22,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity android:name=".app.SettingsAktivity"
+            android:hardwareAccelerated="true"
+            />
+        <activity android:name=".app.ProfileLayoutsAktivity"
+            android:hardwareAccelerated="true"
+            />
 
         <service android:name=".service.BeaconService"
             android:exported="false" />

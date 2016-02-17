@@ -1,7 +1,7 @@
 package com.github.mitchwongho.android.beacon.bluetooth.rx;
 
 import android.bluetooth.BluetoothAdapter;
-import android.os.SystemClock;
+import android.bluetooth.BluetoothDevice;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
@@ -9,9 +9,7 @@ import java.util.concurrent.TimeUnit;
 
 import rx.Observable;
 import rx.Subscriber;
-import rx.Subscription;
 import rx.android.MainThreadSubscription;
-import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
 
 /**
@@ -22,43 +20,30 @@ public class StartLeScanOnSubscribe implements Observable.OnSubscribe<LeScanResu
     public String TAG = StartLeScanOnSubscribe.class.getSimpleName();
 
     private BluetoothAdapter adapter;
-    private Long duration = 0L;
 
-    public StartLeScanOnSubscribe(@NonNull final BluetoothAdapter adapter, @NonNull final Integer duration) {
+    public StartLeScanOnSubscribe(@NonNull final BluetoothAdapter adapter) {
         this.adapter = adapter;
-        this.duration = duration.longValue();
     }
 
     @Override
     public void call(final Subscriber<? super LeScanResult> subscriber) {
 
-        final BluetoothAdapter.LeScanCallback leScanCallback = (device, rssi, scanRecord) -> {
-            final Byte[] record = new Byte[scanRecord.length];
-            for(int i=0; i<scanRecord.length; i++) {
-                record[i] = Byte.valueOf(scanRecord[i]);
+        final BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+
+        final BluetoothAdapter.LeScanCallback leScanCallback = new BluetoothAdapter.LeScanCallback() {
+            @Override
+            public void onLeScan(BluetoothDevice device, int rssi, byte[] scanRecord) {
+                Log.d(TAG, "leScanCallback");
+                final Byte[] record = new Byte[scanRecord.length];
+                for (int i = 0; i < scanRecord.length; i++) {
+                    record[i] = Byte.valueOf(scanRecord[i]);
+                }
+                subscriber.onNext(new LeScanResult(device.getName(), device.getAddress(), rssi, record, System.currentTimeMillis(), 0L, 0));
             }
-            subscriber.onNext(new LeScanResult(device, rssi, record, System.currentTimeMillis(), 0L, 0));
         };
 
-        if (duration > 0) {
-            final Subscription sub = Observable.timer(duration, TimeUnit.MILLISECONDS)
-                    .subscribeOn(Schedulers.trampoline())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(aLong -> {
-                        //
-                        Log.w(TAG, String.format("onNext -> Timer Expired {duration=%dms}", duration.longValue()));
-                    }, throwable -> {
-                        // onError
-                        Log.e(TAG, "onError: ", throwable);
-                        subscriber.onError(throwable);
-                    }, () -> {
-                        Log.d(TAG, "onCompleted");
-                        subscriber.onCompleted();
-                    });
-
-            subscriber.add(sub);
-        }
-
+//        final UUID uuid0 = UUID.fromString("B9407F30-F5F8-466E-AFF9-25556B57FE6D");
+//        adapter.startLeScan(new UUID[] { uuid0 }, leScanCallback);
         adapter.startLeScan(leScanCallback);
 
         subscriber.add(new MainThreadSubscription() {

@@ -17,7 +17,7 @@ import rx.Subscription
  */
 
 public class BeaconServiceBinder(public val service: BeaconService) : Binder() {
-    public fun startLeScan(duration: Int = 0, interval: Long = 10000): Observable<List<LeScanResult>>? = service.adapter?.startScan(duration, interval)
+    public fun startLeScan(interval: Long = 10000, pollingEnabled: Boolean = false): Observable<List<LeScanResult>>? = service.adapter?.startScan(interval, pollingEnabled)
 }
 
 public class BeaconService : Service() {
