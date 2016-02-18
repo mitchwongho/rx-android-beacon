@@ -5,7 +5,6 @@ import android.app.Application
 import android.content.Intent
 import android.os.Bundle
 import com.github.mitchwongho.android.beacon.ApplicationComponent
-import com.github.mitchwongho.android.beacon.database.DAO
 import com.github.mitchwongho.android.beacon.service.BeaconService
 
 /**
@@ -14,8 +13,6 @@ import com.github.mitchwongho.android.beacon.service.BeaconService
 class MainApplication : BaseApplication() {
 
     val TAG = MainApplication::class.java.simpleName
-
-    lateinit var dao: DAO
 
     lateinit var component: ApplicationComponent
     var service: Intent?
@@ -77,7 +74,6 @@ class MainApplication : BaseApplication() {
 
     override fun onTerminate() {
         super.onTerminate()
-        dao?.close()
         unregisterActivityLifecycleCallbacks(lifecycleCallbackListener)
     }
 

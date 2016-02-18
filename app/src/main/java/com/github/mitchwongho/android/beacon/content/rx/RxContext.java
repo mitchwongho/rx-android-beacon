@@ -4,9 +4,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.support.annotation.NonNull;
 
-import com.github.mitchwongho.android.beacon.ext.AltBeaconServiceConnect;
-import com.github.mitchwongho.android.beacon.ext.BluetoothStateChanged;
-import com.github.mitchwongho.android.beacon.ext.ServiceBindEvent;
+import com.github.mitchwongho.android.beacon.content.AltBeaconServiceConnect;
+import com.github.mitchwongho.android.beacon.content.BluetoothStateChanged;
+import com.github.mitchwongho.android.beacon.content.ServiceBindEvent;
 
 import rx.Observable;
 

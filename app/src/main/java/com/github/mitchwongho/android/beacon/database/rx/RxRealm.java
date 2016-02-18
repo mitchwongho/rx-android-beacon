@@ -1,9 +1,10 @@
 package com.github.mitchwongho.android.beacon.database.rx;
 
+import android.content.Context;
 import android.support.annotation.NonNull;
 
-import io.realm.Realm;
 import io.realm.RealmObject;
+import io.realm.RealmResults;
 import rx.Observable;
 
 /**
@@ -11,7 +12,11 @@ import rx.Observable;
  */
 public class RxRealm {
 
-    public static Observable<RealmObject> insertOrUpdate(@NonNull final Realm realm, @NonNull final RealmObject realmObject) {
-        return Observable.create(new RealmObjectInsertOnSubscribe(realm, realmObject));
+    public static Observable<RealmObject> insertOrUpdate(@NonNull final Context context, @NonNull final RealmObject realmObject) {
+        return Observable.create(new RealmObjectInsertOnSubscribe(context, realmObject));
+    }
+
+    public static <T extends RealmObject> Observable<RealmResults<T>> fetchAll(@NonNull final Context context, @NonNull final Class<T> clazz) {
+        return Observable.create(new RealmObjectFetchOnSubscribe(context, clazz));
     }
 }

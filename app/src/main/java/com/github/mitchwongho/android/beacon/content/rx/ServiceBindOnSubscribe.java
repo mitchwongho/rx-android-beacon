@@ -7,13 +7,12 @@ import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
 
-import com.github.mitchwongho.android.beacon.ext.ServiceBindEvent;
-import com.github.mitchwongho.android.beacon.ext.ServiceConnectedEvent;
-import com.github.mitchwongho.android.beacon.ext.ServiceDisconnectedEvent;
+import com.github.mitchwongho.android.beacon.content.ServiceBindEvent;
+import com.github.mitchwongho.android.beacon.content.ServiceConnectedEvent;
+import com.github.mitchwongho.android.beacon.content.ServiceDisconnectedEvent;
 
 import java.util.HashMap;
 import java.util.Map;
-
 import rx.Observable;
 import rx.Subscriber;
 import rx.android.MainThreadSubscription;

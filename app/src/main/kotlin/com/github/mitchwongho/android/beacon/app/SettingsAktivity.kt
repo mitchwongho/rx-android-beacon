@@ -7,7 +7,7 @@ import android.util.Log
 import android.view.MenuItem
 import android.view.View
 import com.github.mitchwongho.android.beacon.R
-import com.github.mitchwongho.android.beacon.ext.*
+import com.github.mitchwongho.android.beacon.content.*
 import com.jakewharton.rxbinding.widget.changes
 import com.jakewharton.rxbinding.widget.checkedChanges
 import kotlinx.android.synthetic.main.activity_settings.*

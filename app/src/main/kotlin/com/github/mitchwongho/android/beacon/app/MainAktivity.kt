@@ -13,7 +13,10 @@ import android.view.MenuItem
 import com.github.mitchwongho.android.beacon.R
 import com.github.mitchwongho.android.beacon.bluetooth.rx.LeScanResult
 import com.github.mitchwongho.android.beacon.bluetooth.rx.advertise
-import com.github.mitchwongho.android.beacon.ext.*
+import com.github.mitchwongho.android.beacon.content.*
+import com.github.mitchwongho.android.beacon.ext.FilterType
+import com.github.mitchwongho.android.beacon.ext.RangeBeaconsInRegion
+import com.github.mitchwongho.android.beacon.ext.rxNotifyInRange
 import com.github.mitchwongho.android.beacon.widget.LeScanResultRecyclerViewAdapter
 import kotlinx.android.synthetic.main.activity_main.*
 import org.altbeacon.beacon.Beacon

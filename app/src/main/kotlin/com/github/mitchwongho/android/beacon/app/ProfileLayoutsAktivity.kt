@@ -3,7 +3,6 @@ package com.github.mitchwongho.android.beacon.app
 import android.app.AlertDialog
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.CardView
 import android.support.v7.widget.LinearLayoutManager
 import android.util.Log
 import android.view.Menu
@@ -11,21 +10,19 @@ import android.view.MenuItem
 import android.widget.EditText
 import com.github.mitchwongho.android.beacon.R
 import com.github.mitchwongho.android.beacon.app.rx.AlertDialogButtonClicked
-import com.github.mitchwongho.android.beacon.database.DAO
+import com.github.mitchwongho.android.beacon.content.fetchDO
+import com.github.mitchwongho.android.beacon.content.insertOrUpdate
 import com.github.mitchwongho.android.beacon.domain.ProfileLayout
 import com.github.mitchwongho.android.beacon.ext.Event
 import com.github.mitchwongho.android.beacon.ext.create
 import com.github.mitchwongho.android.beacon.ext.getCustomView
 import com.github.mitchwongho.android.beacon.ext.setCardBackgroundColorCompat
 import com.github.mitchwongho.android.beacon.widget.ProfileLayoutsRecyclerViewAdapter
-import io.realm.RealmResults
 import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.android.synthetic.main.layout_profile_format_card.*
 import rx.android.schedulers.AndroidSchedulers
 import rx.schedulers.Schedulers
 import rx.subjects.BehaviorSubject
 import rx.subscriptions.CompositeSubscription
-import javax.inject.Inject
 
 /**
 
@@ -34,9 +31,6 @@ import javax.inject.Inject
 class ProfileLayoutsAktivity : AppCompatActivity() {
 
     val TAG = ProfileLayoutsAktivity::class.java.simpleName
-
-    @Inject
-    lateinit var dao: DAO
 
     val adapter = ProfileLayoutsRecyclerViewAdapter(mutableListOf(), this)
     var compositeSubscriptions: CompositeSubscription?
@@ -89,7 +83,7 @@ class ProfileLayoutsAktivity : AppCompatActivity() {
                                 val editLayout = view?.findViewById(R.id.edit_profile_layout) as EditText
                                 val model = ProfileLayout(editLayout.text.toString(), editName?.text.toString())
                                 //TODO input validation
-                                dao.rxInsertOrUpdate(model).
+                                insertOrUpdate(model).
                                         subscribeOn(Schedulers.trampoline()).
                                         observeOn(AndroidSchedulers.mainThread()).
                                         subscribe({
@@ -128,10 +122,18 @@ class ProfileLayoutsAktivity : AppCompatActivity() {
 
         compositeSubscriptions?.add(sub)
 
-        val profiles = dao.fetchAllProfileLayout()
-        adapter.applyList(profiles)
-        val sub1 = (profiles as RealmResults).asObservable().
-                subscribe { o -> adapter.applyList(o) }
+        val sub1 = fetchDO(ProfileLayout::class.java).
+                observeOn(AndroidSchedulers.mainThread()).
+                subscribe({
+                    o ->
+                    adapter.applyList(o)
+                }, {
+                    //onError
+                    throwable ->
+                    Log.e(TAG, "fetchDO(ProfileLayout): ERROR ${throwable.message}", throwable)
+                }, {
+                    //onCompleted
+                })
 
         compositeSubscriptions?.add(sub1)
 
@@ -144,7 +146,7 @@ class ProfileLayoutsAktivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
-        compositeSubscriptions?.clear()
+//        compositeSubscriptions?.clear()
         compositeSubscriptions?.unsubscribe()
         reducer.onCompleted()
     }

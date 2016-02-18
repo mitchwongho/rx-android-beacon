@@ -1,5 +1,6 @@
 package com.github.mitchwongho.android.beacon.database.rx;
 
+import android.content.Context;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
@@ -16,17 +17,18 @@ public class RealmObjectInsertOnSubscribe implements Observable.OnSubscribe<Real
 
     public final static String TAG = RealmObjectInsertOnSubscribe.class.getSimpleName();
 
-    private Realm realm;
+    private Context context;
     private RealmObject realmObject;
 
-    public RealmObjectInsertOnSubscribe(@NonNull final Realm realm, @NonNull final RealmObject realmObject) {
-        this.realm = realm;
+    public RealmObjectInsertOnSubscribe(@NonNull final Context context, @NonNull final RealmObject realmObject) {
+        this.context = context;
         this.realmObject = realmObject;
     }
 
     @Override
     public void call(final Subscriber<? super RealmObject> subscriber) {
 
+        final Realm realm = Realm.getInstance(context);
         realm.beginTransaction();
         subscriber.onNext( realm.copyToRealmOrUpdate(realmObject) );
         realm.commitTransaction();
@@ -35,7 +37,9 @@ public class RealmObjectInsertOnSubscribe implements Observable.OnSubscribe<Real
         subscriber.add(new MainThreadSubscription() {
             @Override
             protected void onUnsubscribe() {
-                realm = null;
+                if (!realm.isClosed())
+                    realm.close();
+                context = null;
                 realmObject = null;
             }
         });

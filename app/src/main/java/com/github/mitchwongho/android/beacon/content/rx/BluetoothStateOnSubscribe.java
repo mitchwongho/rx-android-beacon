@@ -7,7 +7,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.support.annotation.NonNull;
 
-import com.github.mitchwongho.android.beacon.ext.BluetoothStateChanged;
+import com.github.mitchwongho.android.beacon.content.BluetoothStateChanged;
 
 import rx.Observable;
 import rx.Subscriber;

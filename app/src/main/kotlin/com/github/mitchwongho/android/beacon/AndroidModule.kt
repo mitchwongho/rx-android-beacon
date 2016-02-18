@@ -4,8 +4,6 @@ import android.app.Application
 import android.content.Context
 import com.github.mitchwongho.android.beacon.app.BaseApplication
 import com.github.mitchwongho.android.beacon.app.ProfileLayoutsAktivity
-import com.github.mitchwongho.android.beacon.database.DAO
-import com.github.mitchwongho.android.beacon.database.RealmDao
 import dagger.Component
 import dagger.Module
 import dagger.Provides
@@ -37,11 +35,5 @@ class AndroidModule(private val application: Application) {
     @ForApplication
     fun provideApplicationContext(): Context {
         return application
-    }
-
-    @Provides
-    @Singleton
-    fun provideDAO(): DAO {
-        return RealmDao(application)
     }
 }

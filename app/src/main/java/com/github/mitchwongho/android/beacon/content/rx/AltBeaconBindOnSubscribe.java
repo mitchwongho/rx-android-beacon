@@ -5,24 +5,16 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.RemoteException;
 import android.support.annotation.NonNull;
-import android.util.Log;
 
-import com.github.mitchwongho.android.beacon.ext.AltBeaconServiceConnect;
-import com.github.mitchwongho.android.beacon.ext.AltBeaconServiceConnectEvent;
+import com.github.mitchwongho.android.beacon.content.AltBeaconServiceConnect;
+import com.github.mitchwongho.android.beacon.content.AltBeaconServiceConnectEvent;
 
 import org.altbeacon.beacon.BeaconConsumer;
 import org.altbeacon.beacon.BeaconManager;
 import org.altbeacon.beacon.BeaconParser;
-import org.altbeacon.beacon.Identifier;
 import org.altbeacon.beacon.Region;
-import org.altbeacon.beacon.startup.BootstrapNotifier;
-import org.altbeacon.beacon.startup.RegionBootstrap;
 
-import java.lang.ref.WeakReference;
-import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
-import java.util.UUID;
 
 import rx.Observable;
 import rx.Subscriber;
@@ -69,7 +61,8 @@ public class AltBeaconBindOnSubscribe implements Observable.OnSubscribe<AltBeaco
                 subscriber.onCompleted();
                 context.unbindService(serviceConnection);
             }
-//
+
+            //
             @Override
             public boolean bindService(Intent intent, ServiceConnection serviceConnection, int i) {
                 return context.bindService(intent, serviceConnection, i);
