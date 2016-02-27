@@ -73,7 +73,7 @@ public class AltBeaconBindOnSubscribe implements Observable.OnSubscribe<AltBeaco
         bm.setBackgroundMode(false);
         bm.setForegroundScanPeriod(scanOn);
         bm.setForegroundBetweenScanPeriod(scanOff);
-        bm.getBeaconParsers().add(new BeaconParser().setBeaconLayout("m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24"));
+        bm.getBeaconParsers().set(0, new BeaconParser().setBeaconLayout("m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24"));
         bm.bind(consumer);
 
         subscriber.add(new MainThreadSubscription() {

@@ -19,4 +19,7 @@
     <string name="save">Save</string>
     <string name="bluetooth_disabled">Bluetooth disabled</string>
     <string name="turn_on">Turn on</string>
+    <string name="add_profile">Add Profile</string>
+    <string name="scan_profiles">Scan Profiles</string>
+    <string name="delete">Delete</string>
 </resources>

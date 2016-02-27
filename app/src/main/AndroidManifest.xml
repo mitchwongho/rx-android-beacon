@@ -23,12 +23,9 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".app.SettingsAktivity"
-            android:hardwareAccelerated="true"
-            />
-        <activity android:name=".app.ProfileLayoutsAktivity"
-            android:hardwareAccelerated="true"
-            />
+        <activity android:name=".app.SettingsAktivity"/>
+        <activity android:name=".app.ProfileLayoutsAktivity"/>
+        <activity android:name=".app.ScanProfileAktivity"/>
 
         <service android:name=".service.BeaconService"
             android:exported="false" />

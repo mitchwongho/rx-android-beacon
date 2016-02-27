@@ -14,6 +14,7 @@ import com.jakewharton.rxbinding.view.RxView
 import kotlinx.android.synthetic.main.layout_profile_format_card.view.*
 import rx.Observable
 import rx.lang.kotlin.BehaviourSubject
+import rx.lang.kotlin.PublishSubject
 
 /**
  *
@@ -22,10 +23,10 @@ class ProfileLayoutsRecyclerViewAdapter(val profiles: MutableList<ProfileLayout>
 
     val TAG = ProfileLayoutsRecyclerViewAdapter::class.java.simpleName
 
-    private val subject = BehaviourSubject<ProfileItemSelected>()
+    private val subject = PublishSubject<ProfileItemSelected>()
 
-    public inner class ProfileItemSelected(val profile: ProfileLayout, val view: CardView) : Event
-    public inner class ProfileItemClicked(val profile: ProfileLayout, val view: CardView) : Event
+    inner class ProfileItemSelected(val profile: ProfileLayout, val view: CardView) : Event
+    inner class ProfileItemClicked(val profile: ProfileLayout, val view: CardView) : Event
 
     inner class ViewHolder(card: View) : RecyclerView.ViewHolder(card) {
         val card: CardView = card as CardView
@@ -71,5 +72,5 @@ class ProfileLayoutsRecyclerViewAdapter(val profiles: MutableList<ProfileLayout>
 
     fun getPosition(item: ProfileLayout): Int = profiles.indexOf(item)
 
-    fun observeOnItemClick(): Observable<ProfileItemSelected> = subject
+    fun observeOnItemClick(): Observable<ProfileItemSelected> = subject.asObservable()
 }

@@ -145,10 +145,10 @@ class MainAktivity : AppCompatActivity() {
         state.clear()
         adapter.applyList(emptyList(), FilterType.RSSI)
 
-        val scanOn: Int = SettingsAktivity.Companion.translateScanOn(prefScanOnPeriod())
-        val scanOff: Int = SettingsAktivity.Companion.translateScanOff(prefScanOffPeriod())
-        val rangingTimeout: Int = SettingsAktivity.Companion.translateRangingTimeout(prefRangingTimeout())
-        val radioRestartInterval: Int = SettingsAktivity.Companion.translateRadioRestart(prefRadioRestartInterval())
+        val scanOn: Int = SettingsAktivity.Companion.translatePositionScanOn(prefScanOnPeriod())
+        val scanOff: Int = SettingsAktivity.Companion.translatePositionScanOff(prefScanOffPeriod())
+        val rangingTimeout: Int = SettingsAktivity.Companion.translatePositionRangingTimeout(prefRangingTimeout())
+        val radioRestartInterval: Int = SettingsAktivity.Companion.translatePositionRadioRestart(prefRadioRestartInterval())
 
         subScanResult = PublishSubject.create()
         val sub0 = subScanResult?.
@@ -270,6 +270,10 @@ class MainAktivity : AppCompatActivity() {
             }
             R.id.menu_item_profiles -> {
                 val intent = Intent(this, ProfileLayoutsAktivity::class.java)
+                startActivity(intent)
+            }
+            R.id.menu_scan_profiles -> {
+                val intent = Intent(this, ScanProfileAktivity::class.java)
                 startActivity(intent)
             }
         }

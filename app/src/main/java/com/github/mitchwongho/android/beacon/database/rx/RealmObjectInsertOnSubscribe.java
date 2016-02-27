@@ -30,9 +30,14 @@ public class RealmObjectInsertOnSubscribe implements Observable.OnSubscribe<Real
 
         final Realm realm = Realm.getInstance(context);
         realm.beginTransaction();
-        subscriber.onNext( realm.copyToRealmOrUpdate(realmObject) );
-        realm.commitTransaction();
-        subscriber.onCompleted();
+        try {
+            subscriber.onNext(realm.copyToRealmOrUpdate(realmObject));
+            realm.commitTransaction();
+            subscriber.onCompleted();
+        } catch (Throwable t) {
+            realm.cancelTransaction();
+            subscriber.onError(t);
+        }
 
         subscriber.add(new MainThreadSubscription() {
             @Override

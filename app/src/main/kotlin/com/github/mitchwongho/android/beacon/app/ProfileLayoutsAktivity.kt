@@ -44,7 +44,7 @@ class ProfileLayoutsAktivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         (application as MainApplication).component.inject(this)
 
-        setContentView(R.layout.activity_profile_formats)
+        setContentView(R.layout.layout_recyclerview)
 
         recyclerview.setHasFixedSize(true)
         recyclerview.layoutManager = LinearLayoutManager(this)
@@ -146,7 +146,7 @@ class ProfileLayoutsAktivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
-//        compositeSubscriptions?.clear()
+        compositeSubscriptions?.clear()
         compositeSubscriptions?.unsubscribe()
         reducer.onCompleted()
     }

@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v7.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/card_view"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="top"
+    android:layout_marginLeft="@dimen/std_margin"
+    android:layout_marginRight="@dimen/std_margin"
+    android:layout_marginTop="@dimen/min_margin"
+    android:layout_marginBottom="@dimen/min_margin"
+    android:clickable="true"
+    app:contentPadding="@dimen/min_padding"
+    android:foreground="?attr/selectableItemBackground">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:orientation="vertical">
+        <!-- Scanning Properties -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <!-- ScanOn Period-->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="?android:textAppearanceSmall"
+                    android:textStyle="bold"
+                    android:text="@string/scan_on_period"/>
+                <TextView
+                    android:id="@+id/scanon_period"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="?android:textAppearanceMedium"
+                    tools:text="1000ms"/>
+            </LinearLayout>
+            <!-- ScanOff Period-->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="?android:textAppearanceSmall"
+                    android:textStyle="bold"
+                    android:layout_gravity="end"
+                    android:text="@string/scan_off_period"/>
+                <TextView
+                    android:id="@+id/scanoff_period"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="end"
+                    style="?android:textAppearanceMedium"
+                    tools:text="1000ms"/>
+            </LinearLayout>
+        </LinearLayout>
+        <!-- Radio Reset & Ranging Properties -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingTop="@dimen/std_padding">
+            <!-- Radio Reset Interface-->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="?android:textAppearanceSmall"
+                    android:textStyle="bold"
+                    android:text="@string/radio_off_period"/>
+                <TextView
+                    android:id="@+id/radio_reset_interval"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="?android:textAppearanceMedium"
+                    tools:text="10000ms"/>
+            </LinearLayout>
+            <!-- Ranging Timeout-->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="?android:textAppearanceSmall"
+                    android:textStyle="bold"
+                    android:layout_gravity="end"
+                    android:text="@string/ranging_timeout"/>
+                <TextView
+                    android:id="@+id/ranging_timeout"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="end"
+                    style="?android:textAppearanceMedium"
+                    tools:text="1000ms"/>
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+</android.support.v7.widget.CardView>

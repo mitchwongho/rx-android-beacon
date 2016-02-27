@@ -1,216 +1,174 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:layout_height="match_parent">
 
-
-    <!-- Emitter/Consumer Mode -->
-    <RelativeLayout
-        android:id="@+id/viewgroup_setting_mode"
+    <android.support.design.widget.CoordinatorLayout
+        android:id="@+id/content"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="@dimen/default_gap">
+        android:layout_height="match_parent"
+        android:layout_alignParentTop="true">
+
         <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentStart="true"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
             android:orientation="vertical">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="left"
-                style="?android:textAppearanceMedium"
-                android:text="@string/mode"/>
-            <TextView
-                android:id="@+id/setting_mode_label"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="left"
-                style="?android:textAppearanceSmall"
-                android:text="@string/ibeacon_receiver"/>
 
-        </LinearLayout>
-        <FrameLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true">
-            <Switch
-                android:id="@+id/switch_mode_is_receiver"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"/>
-        </FrameLayout>
-    </RelativeLayout>
-    <!-- Consumer Lib -->
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="@dimen/default_gap">
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentStart="true"
-            android:orientation="vertical">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="left"
-                style="?android:textAppearanceMedium"
-                android:text="@string/scanning_library"/>
-            <TextView
-                android:id="@+id/setting_library_label"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="left"
-                style="?android:textAppearanceSmall"
-                android:text="@string/std_ble_library"/>
 
-        </LinearLayout>
-        <FrameLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true">
-            <Switch
-                android:id="@+id/switch_library"
-                android:layout_width="wrap_content"
+            <!-- Scan time -->
+            <RelativeLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center"/>
-        </FrameLayout>
-    </RelativeLayout>
-    <!-- Scan time -->
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="@dimen/default_gap">
-        <TextView
-            android:id="@+id/title_scanon_period"
+                android:padding="@dimen/default_gap">
+
+                <TextView
+                    android:id="@+id/title_scanon_period"
+                    style="?android:textAppearanceMedium"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="left|center_vertical"
+                    android:gravity="left"
+                    android:text="@string/scan_on_period"
+                    tools:text="Scan On Period (ms)" />
+
+                <TextView
+                    android:id="@+id/value_scanon_period"
+                    style="?android:textAppearanceMedium"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_gravity="left|center_vertical"
+                    android:gravity="right"
+                    android:text="0ms"
+                    tools:text="0ms" />
+
+                <SeekBar
+                    android:id="@+id/seek_scanon_period"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/title_scanon_period"
+                    android:paddingBottom="@dimen/default_gap"
+                    android:paddingTop="@dimen/default_gap" />
+            </RelativeLayout>
+            <!-- Off time -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="@dimen/default_gap">
+
+                <TextView
+                    android:id="@+id/title_scanoff_period"
+                    style="?android:textAppearanceMedium"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="left|center_vertical"
+                    android:gravity="left"
+                    android:text="@string/scan_off_period"
+                    tools:text="Scan Off Period (ms)" />
+
+                <TextView
+                    android:id="@+id/value_scanoff_period"
+                    style="?android:textAppearanceMedium"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_gravity="left|center_vertical"
+                    android:gravity="left"
+                    android:text="0ms"
+                    tools:text="0ms" />
+
+                <SeekBar
+                    android:id="@+id/seek_scanoff_period"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/title_scanoff_period"
+                    android:paddingBottom="@dimen/default_gap"
+                    android:paddingTop="@dimen/default_gap" />
+            </RelativeLayout>
+            <!-- Radio Restart -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="@dimen/default_gap">
+
+                <TextView
+                    android:id="@+id/title_radio_restart_period"
+                    style="?android:textAppearanceMedium"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="left|center_vertical"
+                    android:gravity="left"
+                    android:text="@string/radio_off_period"
+                    tools:text="Restart Radio Period" />
+
+                <TextView
+                    android:id="@+id/value_radio_restart_period"
+                    style="?android:textAppearanceMedium"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_gravity="left|center_vertical"
+                    android:gravity="left"
+                    android:text="0ms"
+                    tools:text="0ms" />
+
+                <SeekBar
+                    android:id="@+id/seek_radio_restart_period"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/title_radio_restart_period"
+                    android:paddingBottom="@dimen/default_gap"
+                    android:paddingTop="@dimen/default_gap" />
+            </RelativeLayout>
+            <!-- Ranging Timeout -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="@dimen/default_gap">
+
+                <TextView
+                    android:id="@+id/title_ranging_timeout"
+                    style="?android:textAppearanceMedium"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="left|center_vertical"
+                    android:gravity="left"
+                    android:text="@string/ranging_timeout"
+                    tools:text="Ranging Timeout" />
+
+                <TextView
+                    android:id="@+id/value_ranging_timeout"
+                    style="?android:textAppearanceMedium"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_gravity="left|center_vertical"
+                    android:gravity="left"
+                    android:text="0ms"
+                    tools:text="0ms" />
+
+                <SeekBar
+                    android:id="@+id/seek_ranging_timeout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/title_ranging_timeout"
+                    android:paddingBottom="@dimen/default_gap"
+                    android:paddingTop="@dimen/default_gap" />
+            </RelativeLayout>
+        </LinearLayout>
+
+        <!-- FAB -->
+        <android.support.design.widget.FloatingActionButton
+            android:id="@+id/fab"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="left|center_vertical"
-            android:gravity="left"
-            style="?android:textAppearanceMedium"
-            tools:text="Scan On Period (ms)"
-            android:text="@string/scan_on_period"/>
-        <TextView
-            android:id="@+id/value_scanon_period"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="left|center_vertical"
-            android:gravity="right"
-            android:layout_alignParentEnd="true"
-            style="?android:textAppearanceMedium"
-            tools:text="0ms"
-            android:text="0ms"/>
-        <SeekBar
-            android:id="@+id/seek_scanon_period"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:paddingTop="@dimen/default_gap"
-            android:paddingBottom="@dimen/default_gap"
-            android:layout_below="@+id/title_scanon_period"
-            />
-    </RelativeLayout>
-    <!-- Off time -->
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="@dimen/default_gap">
-        <TextView
-            android:id="@+id/title_scanoff_period"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="left|center_vertical"
-            android:gravity="left"
-            style="?android:textAppearanceMedium"
-            tools:text="Scan Off Period (ms)"
-            android:text="@string/scan_off_period"/>
-        <TextView
-            android:id="@+id/value_scanoff_period"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="left|center_vertical"
-            android:gravity="left"
-            android:layout_alignParentEnd="true"
-            style="?android:textAppearanceMedium"
-            tools:text="0ms"
-            android:text="0ms"/>
-        <SeekBar
-            android:id="@+id/seek_scanoff_period"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/title_scanoff_period"
-            android:paddingTop="@dimen/default_gap"
-            android:paddingBottom="@dimen/default_gap"
-            />
-    </RelativeLayout>
-    <!-- Radio Restart -->
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="@dimen/default_gap">
-        <TextView
-            android:id="@+id/title_radio_restart_period"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="left|center_vertical"
-            android:gravity="left"
-            style="?android:textAppearanceMedium"
-            tools:text="Restart Radio Period"
-            android:text="@string/radio_off_period"/>
-        <TextView
-            android:id="@+id/value_radio_restart_period"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="left|center_vertical"
-            android:gravity="left"
-            android:layout_alignParentEnd="true"
-            style="?android:textAppearanceMedium"
-            tools:text="0ms"
-            android:text="0ms"/>
-        <SeekBar
-            android:id="@+id/seek_radio_restart_period"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/title_radio_restart_period"
-            android:paddingTop="@dimen/default_gap"
-            android:paddingBottom="@dimen/default_gap"
-            />
-    </RelativeLayout>
-    <!-- Ranging Timeout -->
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="@dimen/default_gap">
-        <TextView
-            android:id="@+id/title_ranging_timeout"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="left|center_vertical"
-            android:gravity="left"
-            style="?android:textAppearanceMedium"
-            tools:text="Ranging Timeout"
-            android:text="@string/ranging_timeout"/>
-        <TextView
-            android:id="@+id/value_ranging_timeout"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="left|center_vertical"
-            android:gravity="left"
-            android:layout_alignParentEnd="true"
-            style="?android:textAppearanceMedium"
-            tools:text="0ms"
-            android:text="0ms"/>
-        <SeekBar
-            android:id="@+id/seek_ranging_timeout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/title_ranging_timeout"
-            android:paddingTop="@dimen/default_gap"
-            android:paddingBottom="@dimen/default_gap"
-            />
-    </RelativeLayout>
-</LinearLayout>
+            android:layout_alignParentBottom="true"
+            android:layout_gravity="end|bottom"
+            android:layout_marginBottom="@dimen/lrg_margin"
+            android:layout_marginEnd="@dimen/lrg_margin"
+            android:src="@android:drawable/ic_input_add"
+            android:tint="@android:color/white" />
+
+    </android.support.design.widget.CoordinatorLayout>
+</RelativeLayout>

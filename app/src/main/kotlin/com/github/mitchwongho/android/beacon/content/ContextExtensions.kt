@@ -5,9 +5,11 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.IBinder
+import android.util.Log
 import com.github.mitchwongho.android.beacon.app.SettingsAktivity
 import com.github.mitchwongho.android.beacon.content.rx.RxContext
 import com.github.mitchwongho.android.beacon.database.rx.RxRealm
+import io.realm.Realm
 import io.realm.RealmObject
 import io.realm.RealmResults
 import org.altbeacon.beacon.BeaconManager
@@ -97,3 +99,20 @@ fun Context.insertOrUpdate(realmObject: RealmObject): Observable<RealmObject> =
 fun <T : RealmObject> Context.fetchDO(clazz: Class<T>): Observable<RealmResults<T>> {
     return RxRealm.fetchAll(this, clazz)
 }
+fun <T : RealmObject> Context.fetchDO(clazz: Class<T>, uuid: String? = null): Observable<RealmResults<T>> {
+    return RxRealm.fetch(this, clazz, uuid!!)
+}
+fun <T : RealmObject> Context.cloneRealmObject(t: T): T {
+    return Realm.getInstance(this).copyFromRealm(t)
+}
+fun <T: RealmObject> Context.deleteRealmObject(clazz: Class<T>, uuid: String? = null): Observable<T> {
+    return RxRealm.delete(this, clazz, uuid!!)
+}
+
+/**
+ *
+ */
+fun Context.d(msg: String) = Log.d( this.javaClass.simpleName, msg)
+fun Context.e(msg: String) = Log.e( this.javaClass.simpleName, msg)
+fun Context.w(msg: String, throwable: Throwable) = Log.w( this.javaClass.simpleName, msg, throwable)
+fun Context.e(msg: String, throwable: Throwable) = Log.e( this.javaClass.simpleName, msg, throwable)

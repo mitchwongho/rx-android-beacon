@@ -1,16 +1,17 @@
 package com.github.mitchwongho.android.beacon.app
 
-import android.os.Build
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
+import android.view.Menu
 import android.view.MenuItem
-import android.view.View
 import com.github.mitchwongho.android.beacon.R
 import com.github.mitchwongho.android.beacon.content.*
+import com.github.mitchwongho.android.beacon.domain.ScanProfile
+import com.jakewharton.rxbinding.view.clicks
 import com.jakewharton.rxbinding.widget.changes
-import com.jakewharton.rxbinding.widget.checkedChanges
 import kotlinx.android.synthetic.main.activity_settings.*
+import org.altbeacon.beacon.BeaconManager
 import rx.android.schedulers.AndroidSchedulers
 import rx.subjects.BehaviorSubject
 import rx.subscriptions.CompositeSubscription
@@ -18,75 +19,92 @@ import rx.subscriptions.CompositeSubscription
 /**
  *
  */
-interface UIAction
 
-data class ScanOnPeriodChanged(val value: Int) : UIAction
-data class ScanOffPeriodChanged(val value: Int) : UIAction
-data class AltBeaconEnabledChanged(val value: Boolean) : UIAction
-data class BeaconReceiverEnabledChanged(val value: Boolean) : UIAction
-data class RadioRestartIntervalChanged(val value: Int) : UIAction
-data class RangingTimeoutChanged(val value: Int) : UIAction
-
-fun SettingsAktivity.Companion.translateScanOn(pos: Int): Int {
+fun SettingsAktivity.Companion.translatePositionScanOn(pos: Int): Int {
     val v: Float = (pos.toFloat() / 100) * (SCAN_ON_MAX - SCAN_ON_MIN)
     return ((SCAN_ON_MIN + v.toInt()) / SCAN_INTERVAL) * SCAN_INTERVAL
 }
 
-fun SettingsAktivity.Companion.translateScanOff(pos: Int): Int {
+fun SettingsAktivity.Companion.translateValueScanOn(value: Int): Int {
+    val p: Float = (value.toFloat() / (SCAN_ON_MAX - SCAN_ON_MIN)) * 100
+    return p.toInt()
+}
+
+fun SettingsAktivity.Companion.translatePositionScanOff(pos: Int): Int {
     val v: Float = (pos.toFloat() / 100) * (SCAN_OFF_MAX - SCAN_OFF_MIN)
     return ((SCAN_OFF_MIN + v.toInt()) / SCAN_INTERVAL) * SCAN_INTERVAL
 }
 
-fun SettingsAktivity.Companion.translateRadioRestart(pos: Int): Int {
+fun SettingsAktivity.Companion.translateValueScanOff(value: Int): Int {
+    val p: Float = (value.toFloat() / (SCAN_OFF_MAX - SCAN_OFF_MIN)) * 100
+    return p.toInt()
+}
+
+fun SettingsAktivity.Companion.translatePositionRadioRestart(pos: Int): Int {
     val v: Float = (pos.toFloat() / 100) * (RADIO_RESTART_MAX - RADIO_RESTART_MIN)
     return ((RADIO_RESTART_MIN + v.toInt()) / RADIO_RESTART_INTERVAL) * RADIO_RESTART_INTERVAL
 }
 
-fun SettingsAktivity.Companion.translateRangingTimeout(pos: Int): Int {
+fun SettingsAktivity.Companion.translateValueRadioRestart(value: Int): Int {
+    val p: Float = (value.toFloat() / (RADIO_RESTART_MAX - RADIO_RESTART_MIN)) * 100
+    return p.toInt()
+}
+
+fun SettingsAktivity.Companion.translatePositionRangingTimeout(pos: Int): Int {
     val v: Float = (pos.toFloat() / 100) * (RANGING_MAX - RANGING_MIN)
     return ((RANGING_MIN + v.toInt()) / RANGING_INTERVAL) * RANGING_INTERVAL
 }
 
-class SettingsAktivity : AppCompatActivity() {
+fun SettingsAktivity.Companion.translateValueRangingTimeout(value: Int): Int {
+    val p: Float = (value.toFloat() / (RANGING_MAX - RANGING_MIN)) * 100
+    return p.toInt()
+}
+
+class SettingsAktivity(var profile: ScanProfile = ScanProfile()) : AppCompatActivity() {
 
     val TAG = SettingsAktivity::class.java.simpleName
 
-    lateinit var subject: BehaviorSubject<UIAction>
+    lateinit var reducer: BehaviorSubject<UIAction>
     lateinit var subscriptions: CompositeSubscription
 
     companion object {
         val SCAN_ON_MIN = 1000
         val SCAN_ON_MAX = 60000
         val SCAN_INTERVAL = 100
-        val SCAN_OFF_MIN = 1000
+        val SCAN_OFF_MIN = 0
         val SCAN_OFF_MAX = 60000
         val RADIO_RESTART_INTERVAL = 1
-        val RADIO_RESTART_MIN = 1
+        val RADIO_RESTART_MIN = 1 //minutes
         val RADIO_RESTART_MAX = 100
+        val RADIO_RESTART_DEFAULT = 30
         val RANGING_INTERVAL = 1000
-        val RANGING_MIN = 1000
+        val RANGING_MIN = 1000 //milliseconds
         val RANGING_MAX = 120000
+        val RANGING_DEFAULT = 60000
     }
+
+    interface UIAction
+
+    class BackMenuItemClicked : UIAction
+    class DeleteMenuItemClicked : UIAction
+    class FABClicked : UIAction
+    class ScanOnPeriodChanged(val value: Int) : UIAction
+    class ScanOffPeriodChanged(val value: Int) : UIAction
+    class RadioRestartIntervalChanged(val value: Int) : UIAction
+    class RangingTimeoutChanged(val value: Int) : UIAction
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
         seek_scanon_period.max = 100 // 0~100%
         seek_scanoff_period.max = 100 // 0~100%
+        seek_radio_restart_period.max = 100
+        seek_ranging_timeout.max = 100
 
-        switch_library.isChecked = applyAltBeaconSwitch(prefAltBeaconEnabled())
-        seek_scanon_period.progress = applyScanOn(prefScanOnPeriod())
-        seek_scanoff_period.progress = applyScanOff(prefScanOffPeriod())
-        seek_radio_restart_period.progress = applyRadioRestart(prefRadioRestartInterval())
-        seek_ranging_timeout.progress = applyRanging(prefRangingTimeout())
-
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-            viewgroup_setting_mode.visibility = View.GONE
-            switch_mode_is_receiver.isChecked = true
-        } else {
-            viewgroup_setting_mode.visibility = View.VISIBLE
-            switch_mode_is_receiver.isChecked = applyBeaconReceiverModeEnabledSwitch(prefBeaconReceiver())
-        }
+        seek_scanon_period.progress = applyScanOnPosition(prefScanOnPeriod())
+        seek_scanoff_period.progress = applyScanOffPosition(prefScanOffPeriod())
+        seek_radio_restart_period.progress = applyRadioRestartPosition(prefRadioRestartInterval())
+        seek_ranging_timeout.progress = applyRangingPosition(prefRangingTimeout())
 
         supportActionBar?.setDisplayUseLogoEnabled(true)
         supportActionBar?.setIcon(R.mipmap.ic_launcher)
@@ -99,14 +117,49 @@ class SettingsAktivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
 
-        subject = BehaviorSubject.create()
+        reducer = BehaviorSubject.create()
         subscriptions = CompositeSubscription()
+
+        if (intent.hasExtra("ScanProfileId")) {
+            val uuid = intent.getStringExtra("ScanProfileId")
+            val sub8 = fetchDO(ScanProfile::class.java, uuid).
+                    observeOn(AndroidSchedulers.mainThread()).
+                    subscribe({
+                        //onNExt
+                        r ->
+                        if (r.isNotEmpty()) {
+                            profile = cloneRealmObject(r.first()) //NB: to get a Realm-detached Object
+                            applyScanOnPosition(profile.scanOnPeriod)
+                            seek_scanon_period.progress = profile.scanOnPeriod
+                            applyScanOffPosition(profile.scanOffPeriod)
+                            seek_scanoff_period.progress = profile.scanOffPeriod
+                            applyRadioRestartPosition(profile.radioRestartInterval)
+                            seek_radio_restart_period.progress = profile.radioRestartInterval
+                            applyRangingPosition(profile.rangingTimeout)
+                            seek_ranging_timeout.progress = profile.rangingTimeout
+                        } else {
+                            // TODO indicate empty list
+                        }
+                    }, {
+                        //onError
+                        throwable ->
+                        e("Error fetching ScanProfile {uuid=${uuid}}", throwable)
+                    }, {
+                        //onCompleted
+                    })
+            subscriptions.add(sub8)
+        } else {
+            applyScanOnValue(BeaconManager.DEFAULT_FOREGROUND_SCAN_PERIOD.toInt())
+            applyScanOffValue(BeaconManager.DEFAULT_FOREGROUND_BETWEEN_SCAN_PERIOD.toInt())
+            applyRadioRestartValue(RADIO_RESTART_DEFAULT)
+            applyRangingValue(RANGING_DEFAULT)
+        }
 
         // subscribe to `R.id.seek.scanon_period`
         val sub1 = seek_scanon_period.changes().
                 subscribeOn(AndroidSchedulers.mainThread()).
                 map { value -> ScanOnPeriodChanged(value) }.
-                subscribe(subject)
+                subscribe(reducer)
 
         subscriptions.add(sub1)
 
@@ -114,31 +167,15 @@ class SettingsAktivity : AppCompatActivity() {
         val sub2 = seek_scanoff_period.changes().
                 subscribeOn(AndroidSchedulers.mainThread()).
                 map { value -> ScanOffPeriodChanged(value) }.
-                subscribe(subject)
+                subscribe(reducer)
 
         subscriptions.add(sub2)
-
-        // subscribe to `R.id.switch_library`
-        val sub3 = switch_library.checkedChanges().
-                subscribeOn(AndroidSchedulers.mainThread()).
-                map { value -> AltBeaconEnabledChanged(value) }.
-                subscribe(subject)
-
-        subscriptions.add(sub3)
-
-        // subscribe to `R.id.switch_mode_is_receiver`
-        val sub4 = switch_mode_is_receiver.checkedChanges().
-                subscribeOn(AndroidSchedulers.mainThread()).
-                map { value -> BeaconReceiverEnabledChanged(value) }.
-                subscribe(subject)
-
-        subscriptions.add(sub4)
 
         // subscribe to `R.id.seek_radio_restart_period`
         val sub5 = seek_radio_restart_period.changes().
                 subscribeOn(AndroidSchedulers.mainThread()).
                 map { value -> RadioRestartIntervalChanged(value) }.
-                subscribe(subject)
+                subscribe(reducer)
 
         subscriptions.add(sub5)
 
@@ -146,43 +183,52 @@ class SettingsAktivity : AppCompatActivity() {
         val sub6 = seek_ranging_timeout.changes().
                 subscribeOn(AndroidSchedulers.mainThread()).
                 map { value -> RangingTimeoutChanged(value) }.
-                subscribe(subject)
+                subscribe(reducer)
 
         subscriptions.add(sub6)
+
+        val sub7 = fab.clicks().
+                flatMap { u -> insertOrUpdate(profile) }.
+                map { r -> FABClicked() }.
+                subscribe(reducer)
+        subscriptions.add(sub7)
+
+
     }
 
     override fun onResume() {
         super.onResume()
-
-        val sub = subject?.
+        d("onResume")
+        val sub = reducer.
                 observeOn(AndroidSchedulers.mainThread())?.
                 subscribe({
                     //onNext
                     action ->
                     when (action) {
+                        is BackMenuItemClicked -> {
+                            finish()
+                        }
+                        is FABClicked -> {
+                            finish()
+                        }
+                        is DeleteMenuItemClicked -> {
+                            finish()
+                        }
                         is ScanOnPeriodChanged -> {
-                            prefScanOnPeriod(action.value)
-                            applyScanOn(action.value)
+                            profile.scanOnPeriod = action.value
+                            applyScanOnPosition(action.value)
                         }
                         is ScanOffPeriodChanged -> {
-                            prefScanOffPeriod(action.value)
-                            applyScanOff(action.value)
-                        }
-                        is AltBeaconEnabledChanged -> {
-                            prefAltBeaconEnabled(action.value)
-                            applyAltBeaconSwitch(action.value)
-                        }
-                        is BeaconReceiverEnabledChanged -> {
-                            prefBeaconReceiver(action.value)
-                            applyBeaconReceiverModeEnabledSwitch(action.value)
+                            profile.scanOffPeriod = action.value
+                            applyScanOffPosition(action.value)
                         }
                         is RadioRestartIntervalChanged -> {
-                            prefRadioRestartInterval(action.value)
-                            applyRadioRestart(action.value)
+                            profile.radioRestartInterval = action.value
+                            applyRadioRestartPosition(action.value)
                         }
                         is RangingTimeoutChanged -> {
-                            prefRangingTimeout(action.value)
-                            applyRanging(action.value)
+                            profile.rangingTimeout = action.value
+                            applyRangingPosition(action.value)
                         }
                         else -> Unit
                     }
@@ -194,60 +240,102 @@ class SettingsAktivity : AppCompatActivity() {
                     //onComplete
                 })
 
-        subscriptions?.add(sub)
+        subscriptions.add(sub)
 
     }
 
     override fun onStop() {
         super.onStop()
+        reducer.onCompleted()
         subscriptions.clear()
         subscriptions.unsubscribe()
     }
 
-    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
-        when (item?.itemId) {
-            android.R.id.home -> finish()
-        }
-        return super.onOptionsItemSelected(item)
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.scan_profile_menu, menu)
+        return super.onCreateOptionsMenu(menu)
     }
 
-    private fun applyAltBeaconSwitch(value: Boolean): Boolean {
-        setting_library_label.text = when (value) {
-            true -> getString(R.string.alt_ble_library)
-            else -> getString(R.string.std_ble_library)
-        }
-        return value
+    override fun onPrepareOptionsMenu(menu: Menu): Boolean {
+        menu.findItem(R.id.menu_trash).setVisible(intent.hasExtra("ScanProfileId"))
+        return super.onPrepareOptionsMenu(menu)
     }
 
-    private fun applyBeaconReceiverModeEnabledSwitch(value: Boolean): Boolean {
-        setting_mode_label.text = when (value) {
-            true -> getString(R.string.ibeacon_receiver)
-            else -> getString(R.string.ibeacon_emitter)
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            android.R.id.home -> {
+                reducer.onNext(BackMenuItemClicked())
+                return false
+            }
+            R.id.menu_trash -> {
+                val sub = deleteRealmObject(ScanProfile::class.java, profile.uuid).
+                        observeOn(AndroidSchedulers.mainThread()).
+                        subscribe({
+                            //onNext
+                            it ->
+                            e("onNext: Successfully deleted RealmObject")
+                        }, {
+                            //onError
+                            throwable ->
+                            e("Error deleting RealmObject ${throwable.message}", throwable)
+                        }, {
+                            //onCompleted
+                            e("onCompleted: Successfully deleted RealmObject")
+                            reducer.onNext(DeleteMenuItemClicked())
+                        })
+                subscriptions.add(sub)
+//                reducer.onNext(DeleteMenuItemClicked())
+                return false
+            }
+            else -> return super.onOptionsItemSelected(item)
         }
-        return value
     }
 
-    private fun applyScanOn(pos: Int): Int {
-        val scanOn = translateScanOn(pos)
+    private fun applyScanOnPosition(pos: Int): Int {
+        val scanOn = translatePositionScanOn(pos)
         value_scanon_period.text = "${scanOn}ms"
         return pos
     }
 
-    private fun applyScanOff(pos: Int): Int {
-        val scanOff = translateScanOff(pos)
+    private fun applyScanOnValue(value: Int): Int {
+        val pos = translateValueScanOn(value)
+        seek_scanon_period.progress = pos
+        return value
+    }
+
+    private fun applyScanOffPosition(pos: Int): Int {
+        val scanOff = translatePositionScanOff(pos)
         value_scanoff_period.text = "${scanOff}ms"
         return pos
     }
 
-    private fun applyRadioRestart(pos: Int): Int {
-        val restart = translateRadioRestart(pos)
+    private fun applyScanOffValue(value: Int): Int {
+        val pos = translateValueScanOff(value)
+        seek_scanoff_period.progress = pos
+        return value
+    }
+
+    private fun applyRadioRestartPosition(pos: Int): Int {
+        val restart = translatePositionRadioRestart(pos)
         value_radio_restart_period.text = "${restart}min"
         return pos
     }
 
-    private fun applyRanging(pos: Int): Int {
-        val timeout = translateRangingTimeout(pos)
+    private fun applyRadioRestartValue(value: Int): Int {
+        val pos = translateValueRadioRestart(value)
+        seek_radio_restart_period.progress = pos
+        return value
+    }
+
+    private fun applyRangingPosition(pos: Int): Int {
+        val timeout = translatePositionRangingTimeout(pos)
         value_ranging_timeout.text = "${timeout}ms"
         return pos
+    }
+
+    private fun applyRangingValue(value: Int): Int {
+        val pos = translateValueRangingTimeout(value)
+        seek_ranging_timeout.progress = pos
+        return value
     }
 }
