@@ -60,6 +60,15 @@ fun SettingsAktivity.Companion.translateValueRangingTimeout(value: Int): Int {
     return p.toInt()
 }
 
+fun SettingsAktivity.Companion.translatePositionTestDuration(pos: Int): Int {
+    val v: Float = (pos.toFloat() / 100) * (TEST_DURATION_MAX - TEST_DURATION_MIN)
+    return ((TEST_DURATION_MIN + v.toInt()) / TEST_DURATION_INTERVAL) * TEST_DURATION_INTERVAL
+}
+fun SettingsAktivity.Companion.translateValueTestDuration(value: Int): Int {
+    val p: Float = (value.toFloat() / (TEST_DURATION_MAX - TEST_DURATION_MIN)) * 100
+    return p.toInt()
+}
+
 class SettingsAktivity(var profile: ScanProfile = ScanProfile()) : AppCompatActivity() {
 
     val TAG = SettingsAktivity::class.java.simpleName
@@ -77,6 +86,10 @@ class SettingsAktivity(var profile: ScanProfile = ScanProfile()) : AppCompatActi
         val RADIO_RESTART_MIN = 1 //minutes
         val RADIO_RESTART_MAX = 100
         val RADIO_RESTART_DEFAULT = 30
+        val TEST_DURATION_INTERVAL = 1
+        val TEST_DURATION_MIN = 1 //minutes
+        val TEST_DURATION_MAX = 60
+        val TEST_DURATION_DEFAULT = 15
         val RANGING_INTERVAL = 1000
         val RANGING_MIN = 1000 //milliseconds
         val RANGING_MAX = 120000
@@ -92,6 +105,7 @@ class SettingsAktivity(var profile: ScanProfile = ScanProfile()) : AppCompatActi
     class ScanOffPeriodChanged(val value: Int) : UIAction
     class RadioRestartIntervalChanged(val value: Int) : UIAction
     class RangingTimeoutChanged(val value: Int) : UIAction
+    class TestDurationChanged(val value: Int) : UIAction
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -100,11 +114,7 @@ class SettingsAktivity(var profile: ScanProfile = ScanProfile()) : AppCompatActi
         seek_scanoff_period.max = 100 // 0~100%
         seek_radio_restart_period.max = 100
         seek_ranging_timeout.max = 100
-
-        seek_scanon_period.progress = applyScanOnPosition(prefScanOnPeriod())
-        seek_scanoff_period.progress = applyScanOffPosition(prefScanOffPeriod())
-        seek_radio_restart_period.progress = applyRadioRestartPosition(prefRadioRestartInterval())
-        seek_ranging_timeout.progress = applyRangingPosition(prefRangingTimeout())
+        seek_test_duration.max = 100
 
         supportActionBar?.setDisplayUseLogoEnabled(true)
         supportActionBar?.setIcon(R.mipmap.ic_launcher)
@@ -137,6 +147,8 @@ class SettingsAktivity(var profile: ScanProfile = ScanProfile()) : AppCompatActi
                             seek_radio_restart_period.progress = profile.radioRestartInterval
                             applyRangingPosition(profile.rangingTimeout)
                             seek_ranging_timeout.progress = profile.rangingTimeout
+                            applyTestDurationPosition(profile.testDuration)
+                            seek_test_duration.progress = profile.testDuration
                         } else {
                             // TODO indicate empty list
                         }
@@ -153,6 +165,7 @@ class SettingsAktivity(var profile: ScanProfile = ScanProfile()) : AppCompatActi
             applyScanOffValue(BeaconManager.DEFAULT_FOREGROUND_BETWEEN_SCAN_PERIOD.toInt())
             applyRadioRestartValue(RADIO_RESTART_DEFAULT)
             applyRangingValue(RANGING_DEFAULT)
+            applyTestDurationValue(TEST_DURATION_DEFAULT)
         }
 
         // subscribe to `R.id.seek.scanon_period`
@@ -187,11 +200,19 @@ class SettingsAktivity(var profile: ScanProfile = ScanProfile()) : AppCompatActi
 
         subscriptions.add(sub6)
 
-        val sub7 = fab.clicks().
+        // subscribe to `R.id.seek_ranging_timeout`
+        val sub7 = seek_test_duration.changes().
+                subscribeOn(AndroidSchedulers.mainThread()).
+                map { value -> TestDurationChanged(value) }.
+                subscribe(reducer)
+
+        subscriptions.add(sub7)
+
+        val sub8 = fab.clicks().
                 flatMap { u -> insertOrUpdate(profile) }.
                 map { r -> FABClicked() }.
                 subscribe(reducer)
-        subscriptions.add(sub7)
+        subscriptions.add(sub8)
 
 
     }
@@ -229,6 +250,10 @@ class SettingsAktivity(var profile: ScanProfile = ScanProfile()) : AppCompatActi
                         is RangingTimeoutChanged -> {
                             profile.rangingTimeout = action.value
                             applyRangingPosition(action.value)
+                        }
+                        is TestDurationChanged -> {
+                            profile.testDuration = action.value
+                            applyTestDurationPosition(action.value)
                         }
                         else -> Unit
                     }
@@ -336,6 +361,18 @@ class SettingsAktivity(var profile: ScanProfile = ScanProfile()) : AppCompatActi
     private fun applyRangingValue(value: Int): Int {
         val pos = translateValueRangingTimeout(value)
         seek_ranging_timeout.progress = pos
+        return value
+    }
+
+    private fun applyTestDurationPosition(pos: Int): Int {
+        val duration = translatePositionTestDuration(pos)
+        value_test_duration.text = "${duration}min"
+        return pos
+    }
+
+    private fun applyTestDurationValue(value: Int): Int {
+        val pos = translateValueTestDuration(value)
+        seek_test_duration.progress = pos
         return value
     }
 }

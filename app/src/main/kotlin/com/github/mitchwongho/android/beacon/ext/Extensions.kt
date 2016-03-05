@@ -21,9 +21,13 @@ import rx.Observable
 interface Event
 
 data class RangeBeaconsInRegion(val beacons: Collection<Beacon>, val region: Region)
+data class MonitorBeaconsInRegion(val inRegion: Boolean, val region: Region)
 
 fun BeaconManager.rxNotifyInRange(): Observable<RangeBeaconsInRegion> =
         RxAltBeaconManager.inRange(this)
+
+fun BeaconManager.monitor(): Observable<MonitorBeaconsInRegion> =
+        RxAltBeaconManager.monitor(this)
 
 /**
  * Extension function provides a compatible Resources.getColor() implementation

@@ -8,6 +8,7 @@ import java.util.*
  *
  */
 open class ScanProfile(@PrimaryKey open var uuid: String = UUID.randomUUID().toString(),
+                       open var testDuration: Int = 0,
                        open var scanOnPeriod: Int = 0,
                        open var scanOffPeriod: Int = 0,
                        open var radioRestartInterval: Int = 0,

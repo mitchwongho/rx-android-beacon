@@ -9,4 +9,7 @@
     <color name="statusOkay">#ffd341</color>
     <color name="statusPoor">#ff9456</color>
     <color name="statusBad">#ff655d</color>
+    <color name="fab_start">#599310</color>
+    <color name="fab_stop">#ff655d</color>
+    <color name="fab_reset">#34a9e4</color>
 </resources>

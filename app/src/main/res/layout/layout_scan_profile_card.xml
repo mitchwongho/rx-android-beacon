@@ -16,13 +16,25 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:layout_gravity="center"
         android:orientation="vertical">
+        <TextView
+            android:id="@+id/uuid"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            style="@style/TextAppearance.AppCompat.Medium"
+            tools:text="112233-445566-778899-00"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:singleLine="true"/>
         <!-- Scanning Properties -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:baselineAligned="false"
+            android:paddingTop="@dimen/min_padding"
+            android:paddingBottom="@dimen/min_padding"
             android:orientation="horizontal">
             <!-- ScanOn Period-->
             <LinearLayout
@@ -69,8 +81,10 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:paddingTop="@dimen/std_padding">
+            android:paddingTop="@dimen/min_padding"
+            android:baselineAligned="false"
+            android:paddingBottom="@dimen/min_padding"
+            android:orientation="horizontal">
             <!-- Radio Reset Interface-->
             <LinearLayout
                 android:layout_width="0dp"
@@ -108,9 +122,32 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="end"
+                    android:gravity="bottom"
                     style="?android:textAppearanceMedium"
                     tools:text="1000ms"/>
             </LinearLayout>
+        </LinearLayout>
+        <!-- Ranging Timeout-->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:baselineAligned="true">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                style="?android:textAppearanceSmall"
+                android:textStyle="bold"
+                android:layout_gravity="start"
+                android:text="@string/test_duration"/>
+            <TextView
+                android:id="@+id/test_duration"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="start"
+                android:gravity="bottom"
+                style="?android:textAppearanceMedium"
+                tools:text="1000ms"/>
         </LinearLayout>
     </LinearLayout>
 

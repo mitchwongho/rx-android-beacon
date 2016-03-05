@@ -11,6 +11,7 @@ import org.altbeacon.beacon.BeaconManager;
 import org.altbeacon.beacon.Identifier;
 import org.altbeacon.beacon.RangeNotifier;
 import org.altbeacon.beacon.Region;
+import org.altbeacon.beacon.logging.LogManager;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -28,6 +29,8 @@ public class RangeBeaconsInRegionOnSubscribe implements Observable.OnSubscribe<R
     public final String TAG = RangeBeaconsInRegionOnSubscribe.class.getSimpleName();
 
     final BeaconManager beaconManager;
+    final UUID uuid = UUID.fromString("B9407F30-F5F8-466E-AFF9-25556B57FE6D");
+    final Region region = new Region(TAG, Identifier.fromUuid(uuid), null, null);
 
     /**
      * Constructor
@@ -39,6 +42,7 @@ public class RangeBeaconsInRegionOnSubscribe implements Observable.OnSubscribe<R
 
     @Override
     public void call(final Subscriber<? super RangeBeaconsInRegion> subscriber) {
+        beaconManager.setDebug(true);
         beaconManager.setRangeNotifier(new RangeNotifier() {
             @Override
             public void didRangeBeaconsInRegion(Collection<Beacon> collection, Region region) {
@@ -54,9 +58,6 @@ public class RangeBeaconsInRegionOnSubscribe implements Observable.OnSubscribe<R
             }
         });
 
-        final UUID uuid = UUID.fromString("B9407F30-F5F8-466E-AFF9-25556B57FE6D");
-        final Region region = new Region(TAG, Identifier.fromUuid(uuid), null, null);
-
         try {
             beaconManager.startRangingBeaconsInRegion(region);
         } catch (RemoteException e) {
@@ -66,7 +67,12 @@ public class RangeBeaconsInRegionOnSubscribe implements Observable.OnSubscribe<R
         subscriber.add(new MainThreadSubscription() {
             @Override
             protected void onUnsubscribe() {
-                beaconManager.setRangeNotifier(null);
+                try {
+                    beaconManager.setRangeNotifier(null);
+                    beaconManager.stopRangingBeaconsInRegion(region);
+                } catch (Exception e){
+
+                }
             }
         });
     }

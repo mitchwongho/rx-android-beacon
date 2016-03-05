@@ -43,53 +43,53 @@ fun Context.receiverBluetoothState(): Observable<BluetoothStateChanged> =
 /**
  * SharedPreferences
  */
-fun Context.prefAltBeaconEnabled(): Boolean =
-        this.getSharedPreferences(this.packageName, Context.MODE_PRIVATE).
-                getBoolean("altbeacon.enabled", false)
-
-fun Context.prefAltBeaconEnabled(value: Boolean) =
-        this.getSharedPreferences(this.packageName, Context.MODE_PRIVATE).
-                edit().putBoolean("altbeacon.enabled", value).apply()
-
-fun Context.prefScanOnPeriod(): Int =
-        this.getSharedPreferences(this.packageName, Context.MODE_PRIVATE).
-                getInt("scan.on.period", SettingsAktivity.SCAN_ON_MIN)
-
-fun Context.prefScanOnPeriod(value: Int) =
-        this.getSharedPreferences(this.packageName, Context.MODE_PRIVATE).
-                edit().putInt("scan.on.period", value).apply()
-
-fun Context.prefScanOffPeriod(): Int =
-        this.getSharedPreferences(this.packageName, Context.MODE_PRIVATE).
-                getInt("scan.off.period", SettingsAktivity.SCAN_OFF_MIN)
-
-fun Context.prefScanOffPeriod(value: Int) =
-        this.getSharedPreferences(this.packageName, Context.MODE_PRIVATE).
-                edit().putInt("scan.off.period", value).apply()
-
-fun Context.prefRadioRestartInterval(value: Int) =
-        this.getSharedPreferences(this.packageName, Context.MODE_PRIVATE).
-                edit().putInt("radio.restart.interval", value).apply()
-
-fun Context.prefRadioRestartInterval(): Int =
-        this.getSharedPreferences(this.packageName, Context.MODE_PRIVATE).
-                getInt("radio.restart.interval", SettingsAktivity.RADIO_RESTART_MIN)
-
-fun Context.prefRangingTimeout(value: Int) =
-        this.getSharedPreferences(this.packageName, Context.MODE_PRIVATE).
-                edit().putInt("ranging.timeout", value).apply()
-
-fun Context.prefRangingTimeout(): Int =
-        this.getSharedPreferences(this.packageName, Context.MODE_PRIVATE).
-                getInt("ranging.timeout", SettingsAktivity.RADIO_RESTART_MIN)
-
-fun Context.prefBeaconReceiver(): Boolean =
-        this.getSharedPreferences(this.packageName, Context.MODE_PRIVATE).
-                getBoolean("beacon.mode.receiver", true)
-
-fun Context.prefBeaconReceiver(value: Boolean) =
-        this.getSharedPreferences(this.packageName, Context.MODE_PRIVATE).
-                edit().putBoolean("beacon.mode.receiver", value).apply()
+//fun Context.prefAltBeaconEnabled(): Boolean =
+//        this.getSharedPreferences(this.packageName, Context.MODE_PRIVATE).
+//                getBoolean("altbeacon.enabled", false)
+//
+//fun Context.prefAltBeaconEnabled(value: Boolean) =
+//        this.getSharedPreferences(this.packageName, Context.MODE_PRIVATE).
+//                edit().putBoolean("altbeacon.enabled", value).apply()
+//
+//fun Context.prefScanOnPeriod(): Int =
+//        this.getSharedPreferences(this.packageName, Context.MODE_PRIVATE).
+//                getInt("scan.on.period", SettingsAktivity.SCAN_ON_MIN)
+//
+//fun Context.prefScanOnPeriod(value: Int) =
+//        this.getSharedPreferences(this.packageName, Context.MODE_PRIVATE).
+//                edit().putInt("scan.on.period", value).apply()
+//
+//fun Context.prefScanOffPeriod(): Int =
+//        this.getSharedPreferences(this.packageName, Context.MODE_PRIVATE).
+//                getInt("scan.off.period", SettingsAktivity.SCAN_OFF_MIN)
+//
+//fun Context.prefScanOffPeriod(value: Int) =
+//        this.getSharedPreferences(this.packageName, Context.MODE_PRIVATE).
+//                edit().putInt("scan.off.period", value).apply()
+//
+//fun Context.prefRadioRestartInterval(value: Int) =
+//        this.getSharedPreferences(this.packageName, Context.MODE_PRIVATE).
+//                edit().putInt("radio.restart.interval", value).apply()
+//
+//fun Context.prefRadioRestartInterval(): Int =
+//        this.getSharedPreferences(this.packageName, Context.MODE_PRIVATE).
+//                getInt("radio.restart.interval", SettingsAktivity.RADIO_RESTART_MIN)
+//
+//fun Context.prefRangingTimeout(value: Int) =
+//        this.getSharedPreferences(this.packageName, Context.MODE_PRIVATE).
+//                edit().putInt("ranging.timeout", value).apply()
+//
+//fun Context.prefRangingTimeout(): Int =
+//        this.getSharedPreferences(this.packageName, Context.MODE_PRIVATE).
+//                getInt("ranging.timeout", SettingsAktivity.RADIO_RESTART_MIN)
+//
+//fun Context.prefBeaconReceiver(): Boolean =
+//        this.getSharedPreferences(this.packageName, Context.MODE_PRIVATE).
+//                getBoolean("beacon.mode.receiver", true)
+//
+//fun Context.prefBeaconReceiver(value: Boolean) =
+//        this.getSharedPreferences(this.packageName, Context.MODE_PRIVATE).
+//                edit().putBoolean("beacon.mode.receiver", value).apply()
 /**
  * REALM
  */

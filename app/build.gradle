@@ -5,15 +5,16 @@ apply plugin: 'kotlin-android-extensions'
 apply plugin: 'com.github.mitchwongho.appversion'
 
 buildscript {
-    ext.kotlin_version = '1.0.0-rc-1036'
-    ext.android_support_lib_version = '23.1.1'
+    ext.kotlin_version = '1.0.0'
+    ext.android_support_lib_version = '23.2.0'
 //    ext.retrolambda_version = '3.2.5'
-    ext.rxkotlin_version = '0.40.1'
+    ext.rxkotlin_version = 'v0.50'
     ext.altbeacon_version = '2.7'
     ext.rxjava_version = '1.1.0'
     ext.rxbinding_version = '0.3.1-SNAPSHOT'
     ext.realm_version = '0.87.4'
     ext.dagger2_version = '2.0.2'
+    ext.joda_version = '2.9.2'
     repositories {
         jcenter()
         mavenCentral()
@@ -73,7 +74,7 @@ dependencies {
     compile "com.android.support:appcompat-v7:$android_support_lib_version"
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
-    compile "io.reactivex:rxkotlin:$rxkotlin_version"
+    compile "com.github.reactivex:rxkotlin:$rxkotlin_version"
     compile "io.reactivex:rxandroid:$rxjava_version"
 // Because RxAndroid releases are few and far between, it is recommended you also
 // explicitly depend on RxJava's latest version for bug fixes and new features.
@@ -93,10 +94,13 @@ dependencies {
     compile "com.jakewharton.rxbinding:rxbinding-kotlin:$rxbinding_version"
     compile "com.jakewharton.rxbinding:rxbinding-support-v4-kotlin:$rxbinding_version"
     compile "com.jakewharton.rxbinding:rxbinding-appcompat-v7-kotlin:$rxbinding_version"
+    compile "com.jakewharton.rxbinding:rxbinding-recyclerview-v7-kotlin:$rxbinding_version"
     //Dagger 2 dependencies
     compile "com.google.dagger:dagger:$dagger2_version"
     kapt "com.google.dagger:dagger-compiler:$dagger2_version"
     provided 'org.glassfish:javax.annotation:10.0-b28'
+
+    compile "joda-time:joda-time:$joda_version"
 }
 
 //retrolambda {

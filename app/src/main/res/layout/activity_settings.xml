@@ -156,6 +156,41 @@
                     android:paddingBottom="@dimen/default_gap"
                     android:paddingTop="@dimen/default_gap" />
             </RelativeLayout>
+            <!-- Test Duration -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="@dimen/default_gap">
+
+                <TextView
+                    android:id="@+id/title_test_duration"
+                    style="?android:textAppearanceMedium"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="left|center_vertical"
+                    android:gravity="left"
+                    android:text="@string/test_duration"
+                    tools:text="@string/test_duration" />
+
+                <TextView
+                    android:id="@+id/value_test_duration"
+                    style="?android:textAppearanceMedium"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_gravity="left|center_vertical"
+                    android:gravity="left"
+                    android:text="0min"
+                    tools:text="0min" />
+
+                <SeekBar
+                    android:id="@+id/seek_test_duration"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/title_test_duration"
+                    android:paddingBottom="@dimen/default_gap"
+                    android:paddingTop="@dimen/default_gap" />
+            </RelativeLayout>
         </LinearLayout>
 
         <!-- FAB -->

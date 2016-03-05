@@ -12,8 +12,4 @@
     <item android:id="@+id/menu_scan_profiles"
         android:title="@string/scan_profiles"
         app:showAsAction="collapseActionView|never"/>
-    <item android:id="@+id/menu_item_clear"
-        android:title="@string/clear"
-        app:showAsAction="collapseActionView|never"/>
-
 </menu>

@@ -5,28 +5,38 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.os.Bundle
 import android.support.design.widget.Snackbar
+import android.support.v4.graphics.drawable.DrawableCompat
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
+import android.support.v7.widget.RecyclerView
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import com.github.mitchwongho.android.beacon.R
-import com.github.mitchwongho.android.beacon.bluetooth.rx.LeScanResult
 import com.github.mitchwongho.android.beacon.bluetooth.rx.advertise
 import com.github.mitchwongho.android.beacon.content.*
-import com.github.mitchwongho.android.beacon.ext.FilterType
+import com.github.mitchwongho.android.beacon.domain.ScanProfile
+import com.github.mitchwongho.android.beacon.ext.Event
 import com.github.mitchwongho.android.beacon.ext.RangeBeaconsInRegion
 import com.github.mitchwongho.android.beacon.ext.rxNotifyInRange
-import com.github.mitchwongho.android.beacon.widget.LeScanResultRecyclerViewAdapter
+import com.github.mitchwongho.android.beacon.widget.HorizontalLinearLayoutManager
+import com.github.mitchwongho.android.beacon.widget.ScanProfileRecyclerViewAdapter
+import com.jakewharton.rxbinding.support.v7.widget.RecyclerViewScrollEvent
+import com.jakewharton.rxbinding.support.v7.widget.scrollEvents
+import com.jakewharton.rxbinding.support.v7.widget.scrollStateChanges
+import com.jakewharton.rxbinding.view.RxView
 import kotlinx.android.synthetic.main.activity_main.*
 import org.altbeacon.beacon.Beacon
-import org.altbeacon.beacon.BeaconManager
+import org.joda.time.DateTime
+import org.joda.time.Duration
+import org.joda.time.Period
+import org.joda.time.format.PeriodFormatterBuilder
 import rx.Observable
+import rx.Subscription
 import rx.android.schedulers.AndroidSchedulers
 import rx.schedulers.Schedulers
 import rx.subjects.PublishSubject
 import rx.subscriptions.CompositeSubscription
-import java.util.*
 import java.util.concurrent.TimeUnit
 
 
@@ -41,30 +51,65 @@ class MainAktivity : AppCompatActivity() {
 
     lateinit var compositeSubscriptions: CompositeSubscription
     lateinit var serviceConnection: ServiceConnection
-    var subScanResult: PublishSubject<List<LeScanResult>>?
-    val adapter = LeScanResultRecyclerViewAdapter(ArrayList<LeScanResult>(), this)
-    val state = HashMap<String, LeScanResult>()
+    lateinit var reducer: PublishSubject<Event>
 
-    init {
-        subScanResult = null
+    val btAdapter: BluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
+    //    var subScanResult: PublishSubject<List<LeScanResult>>?
+    //    val adapter = LeScanResultRecyclerViewAdapter(ArrayList<LeScanResult>(), this)
+    val recyclerAdapter = ScanProfileRecyclerViewAdapter(mutableListOf(), this)
+
+    val periodFormatter = PeriodFormatterBuilder().
+            printZeroAlways().
+            minimumPrintedDigits(1).
+            appendHours().
+            appendSeparator(":").
+            minimumPrintedDigits(2).
+            appendMinutes().
+            appendSeparator(":").
+            appendSeconds().
+            toFormatter()
+
+    data class RangedBeacon(val beacon: Beacon, val lastUpdate: DateTime = DateTime.now()) {
+        override fun equals(other: Any?): Boolean {
+            return other is RangedBeacon && other.beacon.bluetoothAddress!!.equals(this.beacon.bluetoothAddress)
+        }
+
+        override fun hashCode(): Int {
+            return this.beacon.bluetoothAddress.hashCode() //perhaps not the best option
+        }
     }
+
+    class OnBeaconsInRange(val beacons: List<RangedBeacon>) : Event
+    class OnScanProfilesFetched(val profiles: List<ScanProfile>) : Event
+    class OnFabClicked(val state: Int) : Event
+    class OnTimerIntervalUpdated(val startTime: DateTime = DateTime.now(), val interval: Long) : Event
+    class OnScrollEvent(val state: Int, val dx: Int, val dy: Int) : Event
+    class OnBluetoothStateChanged(val state: Int) : Event
+    class State(val selectedProfile: ScanProfile? = null,
+                val fabState: OnFabClicked? = null,
+                val timerIntervalState: OnTimerIntervalUpdated? = null,
+                val scrollEventState: OnScrollEvent? = null,
+                val btState: OnBluetoothStateChanged? = null,
+                val intervalSubscription: Subscription? = null,
+                val beaconBindSubscription: Subscription? = null,
+                val rangedBeacons: List<RangedBeacon> = emptyList()) : Event
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.e(TAG, "onCreate")
         setContentView(R.layout.activity_main)
         recyclerview.setHasFixedSize(true)
-        recyclerview.layoutManager = LinearLayoutManager(this)
-        recyclerview.adapter = adapter
+        recyclerview.layoutManager = HorizontalLinearLayoutManager(this)
+        recyclerview.layoutManager.isAutoMeasureEnabled = true
+        recyclerview.adapter = recyclerAdapter
+
+        fab.backgroundTintList = resources.getColorStateList(R.color.main_fab_ready_colour)
+        fab.tag = 0
 
         supportActionBar?.setDisplayUseLogoEnabled(true)
         supportActionBar?.setLogo(R.mipmap.ic_launcher)
         supportActionBar?.setDisplayShowHomeEnabled(true)
-
-        val btAdapter = BluetoothAdapter.getDefaultAdapter()
-        when (btAdapter?.isEnabled) { true -> btAdapter.disable()
-        }
-
     }
 
     override fun onStart() {
@@ -75,37 +120,251 @@ class MainAktivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         Log.e(TAG, "onResume")
-        val btAdapter = BluetoothAdapter.getDefaultAdapter()
+        reducer = PublishSubject.create()
         compositeSubscriptions = CompositeSubscription()
 
+        btAdapter.disable()
+
         // observe BLUETOOTH radio state
-        val sub = receiverBluetoothState().
-                subscribeOn(Schedulers.trampoline()).
-                observeOn(AndroidSchedulers.mainThread()).
-                subscribe({
-                    // OnNext
-                    state ->
-                    when (state.state) {
-                        BluetoothAdapter.STATE_ON -> {
-                            Unit
+//        val sub = receiverBluetoothState().
+//                map { e -> OnBluetoothStateChanged(e.state) }.
+//                subscribe(reducer)
+//
+//        compositeSubscriptions.add(sub)
+
+
+        val sub1 = reducer.observeOn(AndroidSchedulers.mainThread()).
+                startWith(  State() ). //initialise state
+                scan { acc: Event?, event: Event ->
+                    val state = if (acc is State) acc else State()
+                    when (event) {
+                        is OnBluetoothStateChanged -> {
+                            when (event.state) {
+                                BluetoothAdapter.STATE_ON -> {
+                                    Unit
+                                }
+                                BluetoothAdapter.STATE_OFF -> {
+                                    btAdapter.enable()
+                                    reducer.onNext(OnFabClicked(1)) ///Mmmmm...this mights create an error in the state
+                                }
+                            }
+                            State(selectedProfile = state?.selectedProfile,
+                                    btState = event,
+                                    fabState = state?.fabState,
+                                    timerIntervalState = state?.timerIntervalState,
+                                    scrollEventState = state?.scrollEventState)
                         }
-                        BluetoothAdapter.STATE_OFF -> {
-                            btAdapter.enable()
+                        is OnScrollEvent -> {
+
+                            when (event.state) {
+                                RecyclerView.SCROLL_STATE_SETTLING -> {
+                                    val layoutManager = recyclerview.layoutManager as LinearLayoutManager
+                                    val firstVisible = layoutManager.findFirstVisibleItemPosition()
+                                    val firstCompletlyVisible = layoutManager.findFirstCompletelyVisibleItemPosition()
+                                    val lastVisible = layoutManager.findLastVisibleItemPosition()
+                                    val lastCompletlyVisible = layoutManager.findLastCompletelyVisibleItemPosition()
+                                    //                            d("Scroll Event {first=${firstVisible},firstComplete=${firstCompletlyVisible}}")
+                                    //                            d("Scroll Event {last=${lastVisible},lastComplete=${lastCompletlyVisible}}")
+                                    if (event.dx > 0 && (firstVisible != lastVisible)) {
+                                        // scroll right
+                                        recyclerview.smoothScrollToPosition(lastVisible)
+                                        val profile = recyclerAdapter.getItemAtPosition(lastVisible)
+                                        val duration = SettingsAktivity.translatePositionTestDuration(profile.testDuration)
+                                        val startTime = state.timerIntervalState?.startTime ?: DateTime.now()
+                                        setClockText( startTime, duration )
+                                        //
+                                        State(selectedProfile = profile,
+                                                btState = state?.btState,
+                                                fabState = state?.fabState,
+                                                timerIntervalState = state?.timerIntervalState,
+                                                scrollEventState = event)
+                                    } else if (event.dx < 0 && (firstVisible != lastVisible)) {
+                                        // scroll left
+                                        recyclerview.smoothScrollToPosition(firstVisible)
+                                        val profile = recyclerAdapter.getItemAtPosition(firstVisible)
+                                        val duration = SettingsAktivity.translatePositionTestDuration(profile.testDuration)
+                                        val startTime = state.timerIntervalState?.startTime ?: DateTime.now()
+                                        setClockText( startTime, duration )
+                                        //
+                                        State(selectedProfile = profile,
+                                                btState = state?.btState,
+                                                fabState = state?.fabState,
+                                                timerIntervalState = state?.timerIntervalState,
+                                                scrollEventState = event)
+                                    } else {
+                                        acc
+                                    }
+                                }
+                                else -> acc
+                            }
                         }
+                        is OnFabClicked -> {
+                            var subInterval = state.intervalSubscription
+                            var subBeaconBind = state.beaconBindSubscription
+                            var rangedBeacons = state.rangedBeacons
+                            when (event.state) {
+                                0 -> {
+                                    // ready -> running
+                                    btAdapter.enable()
+                                    rangedBeacons = emptyList()
+                                    fab.backgroundTintList = resources.getColorStateList(R.color.main_fab_running_colour)
+                                    fab.setImageDrawable(resources.getDrawable(R.mipmap.ic_stop_white_36dp))
+                                    (recyclerview.layoutManager as HorizontalLinearLayoutManager).canScrollHorizontally(false)
+                                    // start Interval Timer
+                                    subInterval = Observable.combineLatest(
+                                            Observable.just(DateTime.now()),
+                                            Observable.interval(1, TimeUnit.SECONDS).startWith(0L),
+                                            {
+                                                a, b ->
+                                                OnTimerIntervalUpdated(a, b)
+                                            }).
+                                            observeOn(Schedulers.computation()).
+                                            subscribe(reducer)
+
+                                    compositeSubscriptions.add(subInterval)
+                                    //
+                                    // TODO start scanning
+                                    val scanOn = SettingsAktivity.translatePositionScanOn(state.selectedProfile?.scanOnPeriod ?: 0)
+                                    val scanOff = SettingsAktivity.translatePositionScanOff(state.selectedProfile?.scanOffPeriod ?: 0)
+                                    subBeaconBind = this@MainAktivity.
+                                            rxBindAltBeaconManager(scanOn.toLong(), scanOff.toLong()).
+                                            flatMap { it ->
+                                                when(it) {
+                                                    is AltBeaconServiceConnectEvent -> it.beaconManager.rxNotifyInRange()
+                                                    else -> Observable.error<RangeBeaconsInRegion>(UnsupportedOperationException("Expected 'AltBeaconServiceConnectEvent'"))
+                                                }
+                                            }.
+                                            flatMap { it ->
+                                                Observable.from(it.beacons)
+                                            }.
+                                            map { it -> RangedBeacon(it) }.
+                                            buffer(1, TimeUnit.SECONDS).
+//                                            filter { it -> it.isNotEmpty() }.
+                                            map { it -> OnBeaconsInRange(it) }.
+                                            subscribe(reducer)
+                                    compositeSubscriptions.add(subBeaconBind)
+                                    //
+                                }
+                                1 -> {
+                                    // running -> stopped
+                                    clock.setTextColor(resources.getColor(R.color.fab_stop))
+                                    fab.backgroundTintList = resources.getColorStateList(R.color.main_fab_stopped_colour)
+                                    fab.setImageDrawable(resources.getDrawable(R.mipmap.ic_replay_white_36dp))
+                                    subInterval?.unsubscribe()
+                                    compositeSubscriptions.remove(subInterval)
+                                    subBeaconBind?.unsubscribe()
+                                    compositeSubscriptions.remove(subBeaconBind)
+                                }
+                                2 -> {
+                                    //stopped -> ready
+                                    btAdapter.disable()
+                                    clock.setTextColor(resources.getColor(android.R.color.primary_text_light))
+                                    fab.backgroundTintList = resources.getColorStateList(R.color.main_fab_ready_colour)
+                                    fab.setImageDrawable(resources.getDrawable(R.mipmap.ic_play_arrow_white_36dp))
+                                    val duration = SettingsAktivity.translatePositionTestDuration(state.selectedProfile?.testDuration ?: 0)
+                                    val startTime = state.timerIntervalState?.startTime ?: DateTime.now()
+                                    setClockText(startTime, duration)
+                                    (recyclerview.layoutManager as HorizontalLinearLayoutManager).canScrollHorizontally(true)
+                                }
+                            }
+                            fab.tag = (event.state + 1) % 3
+                            //
+                            State(selectedProfile = state?.selectedProfile,
+                                    btState = state?.btState,
+                                    fabState = event,
+                                    timerIntervalState = state?.timerIntervalState,
+                                    scrollEventState = state?.scrollEventState,
+                                    intervalSubscription = subInterval,
+                                    beaconBindSubscription = subBeaconBind,
+                                    rangedBeacons = rangedBeacons)
+                        }
+                        is OnTimerIntervalUpdated -> {
+                            val start = event.startTime
+                            val duration = SettingsAktivity.translatePositionTestDuration(state.selectedProfile?.testDuration ?: 0)
+                            val end = start.plusMinutes(duration)
+                            val now = DateTime.now()
+                            val p = Period(now, end)
+                            clock.text = p.toString(periodFormatter)
+                            if (now.isEqual(end) || now.isAfter(end)) {
+                              reducer.onNext(OnFabClicked(1))
+                            }
+                            //
+                            State(selectedProfile = state?.selectedProfile,
+                                    btState = state?.btState,
+                                    fabState = state?.fabState,
+                                    timerIntervalState = event,
+                                    scrollEventState = state?.scrollEventState,
+                                    intervalSubscription = state?.intervalSubscription,
+                                    beaconBindSubscription = state?.beaconBindSubscription,
+                                    rangedBeacons = state?.rangedBeacons)
+                        }
+                        is OnScanProfilesFetched -> {
+                            val profiles = event.profiles
+                            recyclerAdapter.updateDataSet(profiles)
+                            if (profiles.isNotEmpty()) {
+                                val selectedProfile = profiles.first()
+                                val duration = SettingsAktivity.translatePositionTestDuration(selectedProfile.testDuration)
+                                setClockText(DateTime.now(), duration)
+                                State(selectedProfile = selectedProfile,
+                                        btState = state?.btState,
+                                        fabState = state?.fabState,
+                                        timerIntervalState = state?.timerIntervalState,
+                                        scrollEventState = state?.scrollEventState)
+                            } else {
+                                acc
+                            }
+                        }
+                        is OnBeaconsInRange -> {
+                            d("Ranged ${event.beacons.size}")
+                            num_ranged_beacons.text = "${event.beacons.size}/${state.rangedBeacons.size}"
+                            for (beacon: RangedBeacon in event.beacons) {
+                                val contains = state?.rangedBeacons.contains(beacon)
+                                d("Ranged {contains=${contains}}")
+                                if (contains) {
+                                    val rangingTimeout = SettingsAktivity.translatePositionRangingTimeout(state.selectedProfile?.rangingTimeout ?: 0)
+                                    val lastSeen = state?.rangedBeacons[state?.rangedBeacons.indexOf(beacon)].lastUpdate
+                                    val now = DateTime.now()
+                                    val duration = Duration(lastSeen, now)
+                                    d("Ranged beacon {beacon=${beacon.beacon.bluetoothAddress},last=${duration.millis},timeout=${rangingTimeout}}")
+                                    if (duration.millis > rangingTimeout) {
+                                        e("Ranged beacon '${beacon.beacon.bluetoothAddress}' exceeded timeout {last=${lastSeen}}")
+                                    }
+                                }
+                            }
+                            val listBeacons: MutableList<RangedBeacon> = mutableListOf()
+                            listBeacons.addAll(event.beacons)
+                            listBeacons.addAll(state.rangedBeacons)
+                            State(selectedProfile = state?.selectedProfile,
+                                    btState = state?.btState,
+                                    fabState = state?.fabState,
+                                    timerIntervalState = state?.timerIntervalState,
+                                    scrollEventState = state?.scrollEventState,
+                                    intervalSubscription = state?.intervalSubscription,
+                                    beaconBindSubscription = state?.beaconBindSubscription,
+                                    rangedBeacons = listBeacons.toSet().toList())
+                        }
+                        else -> acc
                     }
+                }.
+                subscribe({
+                    //onNext
+                    acc ->
+                    d("reducer::onNext")
                 }, {
                     //onError
                     throwable ->
+                    e("ERROR handing event", throwable)
+                }, {
+                    //onCompleted
+                    d("reducer::onCompleted")
                 })
+        compositeSubscriptions.add(sub1)
 
-        compositeSubscriptions.add(sub)
+//        if (!checkBluetoothAdapter()) {
+//            return
+//        }
 
-        if (!checkBluetoothAdapter()) {
-            return
-        }
-
-        val isLeReceiver = prefBeaconReceiver()
-        Log.d(TAG, "onResume(){asLEReceiver=${isLeReceiver}}")
+        val isLeReceiver = true
 
         if (isLeReceiver) {
             onResumeAsBeaconReceiver(btAdapter)
@@ -142,96 +401,37 @@ class MainAktivity : AppCompatActivity() {
      * onResume for Beacon Receiver mode
      */
     private fun onResumeAsBeaconReceiver(btAdapter: BluetoothAdapter) {
-        state.clear()
-        adapter.applyList(emptyList(), FilterType.RSSI)
+        //
+        // Observe RecyclerView scroll events
+        val sub = Observable.combineLatest<Int, RecyclerViewScrollEvent, OnScrollEvent>(
+                recyclerview.scrollStateChanges(),
+                recyclerview.scrollEvents(),
+                { state, event ->
+                    OnScrollEvent(state, event.dx(), event.dy())
+                }).subscribe(reducer)
 
-        val scanOn: Int = SettingsAktivity.Companion.translatePositionScanOn(prefScanOnPeriod())
-        val scanOff: Int = SettingsAktivity.Companion.translatePositionScanOff(prefScanOffPeriod())
-        val rangingTimeout: Int = SettingsAktivity.Companion.translatePositionRangingTimeout(prefRangingTimeout())
-        val radioRestartInterval: Int = SettingsAktivity.Companion.translatePositionRadioRestart(prefRadioRestartInterval())
-
-        subScanResult = PublishSubject.create()
-        val sub0 = subScanResult?.
-                subscribeOn(Schedulers.trampoline())?.
-                observeOn(AndroidSchedulers.mainThread())?.
-                subscribe ({ res ->
-                    val mapped: Map<String, LeScanResult> = res.associateBy { it -> it.deviceAddress }
-                    synchronized(state) {
-                        mapped.forEach { e ->
-                            e.value.oob = state.get(e.key)?.oob ?: 0
-                        }
-                        state.putAll(mapped)
-                        val now = System.currentTimeMillis()
-                        state.forEach { e ->
-                            val oldAge = e.value.age
-                            e.value.age = now - e.value.timestamp
-                            if (oldAge < rangingTimeout && e.value.age >= rangingTimeout) e.value.oob += 1
-                        }
-                        //                    }
-                        adapter.applyList(state.values.toList(), FilterType.RSSI)
-                    }
-                }, { throwable ->
-                    Log.e(TAG, "ReplaySubject onError ${throwable.message}", throwable)
-                })
-        compositeSubscriptions.add(sub0)
-
-        BeaconManager.setAndroidLScanningDisabled(true)
-        BeaconManager.setUseTrackingCache(false)
-
-        val sub1 = this.rxBindAltBeaconManager(scanOn.toLong(), scanOff.toLong()).
-                flatMap { conn ->
-                    Log.d(TAG, "onAltBeacon::Connected")
-                    when (conn) {
-                        is AltBeaconServiceConnectEvent -> {
-                            conn.beaconManager.rxNotifyInRange()
-                        }
-                        else -> Observable.error<RangeBeaconsInRegion>(UnsupportedOperationException("Expected 'AltBeaconServiceConnectEvent'"))
-                    }
-                }.
-                subscribeOn(Schedulers.io()).
-                observeOn(AndroidSchedulers.mainThread()).
-                map {
-                    // transform the List<Beacon> into a List<LeScanResult>
-                    it ->
-                    it.beacons.map<Beacon, LeScanResult> { it ->
-                        LeScanResult(it.bluetoothName, it.bluetoothAddress, it.rssi, emptyArray(), System.currentTimeMillis(), 0, 0)
-                    }
-                }.
-                subscribe({
-                    //onNext
-                    results ->
-                    Log.e(TAG, "onAltBeacon in range ${results.size}")
-                    subScanResult?.onNext(results)
-                }, {
-                    //onError
-                    throwable ->
-                    Log.e(TAG, "onAltBeacon error ${throwable.message}", throwable)
-                }, {
-                    //onComplete
-                    Log.e(TAG, "onAltBeacon completed")
-                })
-
+        compositeSubscriptions.add(sub)
+        //
+        // Observe FAB clicks
+        val sub1 = RxView.clicks(fab).
+                map { e -> OnFabClicked(fab.tag as Int) }.
+                subscribe(reducer)
         compositeSubscriptions.add(sub1)
-
-        val sub2 = Observable.interval(radioRestartInterval.toLong(), TimeUnit.MINUTES).
-                subscribeOn(Schedulers.trampoline()).
-                observeOn(Schedulers.io()).
-                subscribe { aLong ->
-                    btAdapter.disable()
-                }
-
+        //
+        // Observe RecyclerView data
+        val sub2 = fetchDO(ScanProfile::class.java).
+                map { it -> OnScanProfilesFetched(it) }.
+                subscribe(reducer)
         compositeSubscriptions.add(sub2)
     }
 
     override fun onPause() {
         super.onPause()
         Log.e(TAG, "onPause")
+        //        subScanResult?.onCompleted()
+        reducer.onCompleted()
         compositeSubscriptions.unsubscribe()
         compositeSubscriptions.clear()
-        subScanResult?.onCompleted()
-        synchronized(state) {
-            state.clear()
-        }
     }
 
     override fun onStop() {
@@ -261,13 +461,6 @@ class MainAktivity : AppCompatActivity() {
                 val intent = Intent(this, SettingsAktivity::class.java)
                 startActivity(intent)
             }
-            R.id.menu_item_clear -> {
-                synchronized(state) {
-                    state.clear()
-                    adapter.applyList(emptyList(), FilterType.RSSI)
-                }
-
-            }
             R.id.menu_item_profiles -> {
                 val intent = Intent(this, ProfileLayoutsAktivity::class.java)
                 startActivity(intent)
@@ -281,7 +474,6 @@ class MainAktivity : AppCompatActivity() {
     }
 
     private fun checkBluetoothAdapter(): Boolean {
-        val btAdapter = BluetoothAdapter.getDefaultAdapter()
         if (btAdapter == null) {
             //not available
             return false
@@ -300,6 +492,12 @@ class MainAktivity : AppCompatActivity() {
             return false
         }
         return true
+    }
+
+    private fun setClockText(start: DateTime, durationMinutes: Int) {
+        val end = start.plusMinutes(durationMinutes)
+        val p = Period(start, end)
+        clock.text = p.toString(periodFormatter)
     }
 
 }

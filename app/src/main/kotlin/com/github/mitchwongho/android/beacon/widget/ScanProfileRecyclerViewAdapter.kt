@@ -13,6 +13,7 @@ import com.github.mitchwongho.android.beacon.ext.Event
 import com.jakewharton.rxbinding.view.RxView
 import kotlinx.android.synthetic.main.layout_scan_profile_card.view.*
 import rx.Observable
+import rx.Subscriber
 import rx.subjects.BehaviorSubject
 import rx.subjects.PublishSubject
 
@@ -28,22 +29,28 @@ class ScanProfileRecyclerViewAdapter(val profiles: MutableList<ScanProfile>, val
     class OnItemLongPressed(val scanProfile: ScanProfile, val view: View) : UIEvent
 
     inner class ViewHolder(card: View) : RecyclerView.ViewHolder(card) {
-        val scanOnValue: TextView = card.scanon_period as TextView
-        val scanOffValue: TextView = card.scanoff_period as TextView
-        val radioResetValue: TextView = card.radio_reset_interval as TextView
-        val rangingTimeoutValue: TextView = card.ranging_timeout as TextView
+        val uuid: TextView = card.uuid
+        val scanOnValue: TextView = card.scanon_period
+        val scanOffValue: TextView = card.scanoff_period
+        val radioResetValue: TextView = card.radio_reset_interval
+        val rangingTimeoutValue: TextView = card.ranging_timeout
+        val testDurationValue: TextView = card.test_duration
     }
 
     override fun getItemCount(): Int {
         return profiles.size
     }
 
+    fun getItemAtPosition(pos: Int): ScanProfile = profiles.get(pos)
+
     override fun onBindViewHolder(viewHolder: ViewHolder, pos: Int) {
         val profile = profiles[pos]
+        viewHolder.uuid.text = profile.uuid
         viewHolder.scanOnValue.text = "${SettingsAktivity.translatePositionScanOn(profile.scanOnPeriod)}ms"
         viewHolder.scanOffValue.text = "${SettingsAktivity.translatePositionScanOff(profile.scanOffPeriod)}ms"
-        viewHolder.radioResetValue.text = "${SettingsAktivity.translatePositionRadioRestart(profile.radioRestartInterval)}ms"
+        viewHolder.radioResetValue.text = "${SettingsAktivity.translatePositionRadioRestart(profile.radioRestartInterval)}min"
         viewHolder.rangingTimeoutValue.text = "${SettingsAktivity.translatePositionRangingTimeout(profile.rangingTimeout)}ms"
+        viewHolder.testDurationValue.text = "${SettingsAktivity.translatePositionTestDuration(profile.testDuration)}min"
         RxView.clicks(viewHolder.itemView).map { it -> OnItemClicked(profile,viewHolder.itemView) }.subscribe(subject)
         RxView.longClicks(viewHolder.itemView).map { it -> OnItemLongPressed(profile,viewHolder.itemView) }.subscribe(subject)
     }
@@ -62,6 +69,8 @@ class ScanProfileRecyclerViewAdapter(val profiles: MutableList<ScanProfile>, val
     fun observe(): Observable<UIEvent> {
         return subject.asObservable()
     }
+
+
 
 
 }
