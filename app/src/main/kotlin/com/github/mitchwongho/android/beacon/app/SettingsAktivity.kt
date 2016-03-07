@@ -92,7 +92,7 @@ class SettingsAktivity(var profile: ScanProfile = ScanProfile()) : AppCompatActi
         val TEST_DURATION_DEFAULT = 15
         val RANGING_INTERVAL = 1000
         val RANGING_MIN = 1000 //milliseconds
-        val RANGING_MAX = 120000
+        val RANGING_MAX = 5 * 60000
         val RANGING_DEFAULT = 60000
     }
 

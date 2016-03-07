@@ -47,11 +47,22 @@
                 android:id="@+id/num_ranged_beacons"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
                 android:drawableLeft="@mipmap/ic_wifi_tethering_black_18dp"
                 android:gravity="center_vertical|start"
                 style="@style/TextAppearance.AppCompat.Medium"
                 tools:text="0/0"
                 android:text="0/0"/>
+            <TextView
+                android:id="@+id/battery_level"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:drawableRight="@mipmap/ic_battery_unknown_black_18dp"
+                android:gravity="center_vertical|end"
+                style="@style/TextAppearance.AppCompat.Medium"
+                tools:text="0"
+                android:text="0"/>
         </RelativeLayout>
     </LinearLayout>
 

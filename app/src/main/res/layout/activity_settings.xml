@@ -202,7 +202,7 @@
             android:layout_gravity="end|bottom"
             android:layout_marginBottom="@dimen/lrg_margin"
             android:layout_marginEnd="@dimen/lrg_margin"
-            android:src="@android:drawable/ic_input_add"
+            android:src="@mipmap/ic_save_white_36dp"
             android:tint="@android:color/white" />
 
     </android.support.design.widget.CoordinatorLayout>

@@ -12,4 +12,5 @@
     <color name="fab_start">#599310</color>
     <color name="fab_stop">#ff655d</color>
     <color name="fab_reset">#34a9e4</color>
+    <color name="snackbar_alert">#ff655d</color>
 </resources>

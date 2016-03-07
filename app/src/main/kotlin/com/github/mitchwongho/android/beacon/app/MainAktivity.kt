@@ -2,10 +2,11 @@ package com.github.mitchwongho.android.beacon.app
 
 import android.bluetooth.BluetoothAdapter
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.ServiceConnection
+import android.os.BatteryManager
 import android.os.Bundle
 import android.support.design.widget.Snackbar
-import android.support.v4.graphics.drawable.DrawableCompat
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
@@ -37,6 +38,7 @@ import rx.android.schedulers.AndroidSchedulers
 import rx.schedulers.Schedulers
 import rx.subjects.PublishSubject
 import rx.subscriptions.CompositeSubscription
+import java.text.NumberFormat
 import java.util.concurrent.TimeUnit
 
 
@@ -52,6 +54,8 @@ class MainAktivity : AppCompatActivity() {
     lateinit var compositeSubscriptions: CompositeSubscription
     lateinit var serviceConnection: ServiceConnection
     lateinit var reducer: PublishSubject<Event>
+    val batteryLevelFormat = NumberFormat.getPercentInstance()
+    lateinit var optionsMenu: Menu
 
     val btAdapter: BluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
     //    var subScanResult: PublishSubject<List<LeScanResult>>?
@@ -92,7 +96,8 @@ class MainAktivity : AppCompatActivity() {
                 val btState: OnBluetoothStateChanged? = null,
                 val intervalSubscription: Subscription? = null,
                 val beaconBindSubscription: Subscription? = null,
-                val rangedBeacons: List<RangedBeacon> = emptyList()) : Event
+                val rangedBeacons: List<RangedBeacon> = emptyList(),
+                val startBatterytPct: Float = 0f) : Event
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -126,15 +131,15 @@ class MainAktivity : AppCompatActivity() {
         btAdapter.disable()
 
         // observe BLUETOOTH radio state
-//        val sub = receiverBluetoothState().
-//                map { e -> OnBluetoothStateChanged(e.state) }.
-//                subscribe(reducer)
-//
-//        compositeSubscriptions.add(sub)
+        //        val sub = receiverBluetoothState().
+        //                map { e -> OnBluetoothStateChanged(e.state) }.
+        //                subscribe(reducer)
+        //
+        //        compositeSubscriptions.add(sub)
 
 
         val sub1 = reducer.observeOn(AndroidSchedulers.mainThread()).
-                startWith(  State() ). //initialise state
+                startWith(State()).//initialise state
                 scan { acc: Event?, event: Event ->
                     val state = if (acc is State) acc else State()
                     when (event) {
@@ -148,11 +153,11 @@ class MainAktivity : AppCompatActivity() {
                                     reducer.onNext(OnFabClicked(1)) ///Mmmmm...this mights create an error in the state
                                 }
                             }
-                            State(selectedProfile = state?.selectedProfile,
+                            State(selectedProfile = state.selectedProfile,
                                     btState = event,
-                                    fabState = state?.fabState,
-                                    timerIntervalState = state?.timerIntervalState,
-                                    scrollEventState = state?.scrollEventState)
+                                    fabState = state.fabState,
+                                    timerIntervalState = state.timerIntervalState,
+                                    scrollEventState = state.scrollEventState)
                         }
                         is OnScrollEvent -> {
 
@@ -171,12 +176,12 @@ class MainAktivity : AppCompatActivity() {
                                         val profile = recyclerAdapter.getItemAtPosition(lastVisible)
                                         val duration = SettingsAktivity.translatePositionTestDuration(profile.testDuration)
                                         val startTime = state.timerIntervalState?.startTime ?: DateTime.now()
-                                        setClockText( startTime, duration )
+                                        setClockText(startTime, duration)
                                         //
                                         State(selectedProfile = profile,
-                                                btState = state?.btState,
-                                                fabState = state?.fabState,
-                                                timerIntervalState = state?.timerIntervalState,
+                                                btState = state.btState,
+                                                fabState = state.fabState,
+                                                timerIntervalState = state.timerIntervalState,
                                                 scrollEventState = event)
                                     } else if (event.dx < 0 && (firstVisible != lastVisible)) {
                                         // scroll left
@@ -184,12 +189,12 @@ class MainAktivity : AppCompatActivity() {
                                         val profile = recyclerAdapter.getItemAtPosition(firstVisible)
                                         val duration = SettingsAktivity.translatePositionTestDuration(profile.testDuration)
                                         val startTime = state.timerIntervalState?.startTime ?: DateTime.now()
-                                        setClockText( startTime, duration )
+                                        setClockText(startTime, duration)
                                         //
                                         State(selectedProfile = profile,
-                                                btState = state?.btState,
-                                                fabState = state?.fabState,
-                                                timerIntervalState = state?.timerIntervalState,
+                                                btState = state.btState,
+                                                fabState = state.fabState,
+                                                timerIntervalState = state.timerIntervalState,
                                                 scrollEventState = event)
                                     } else {
                                         acc
@@ -202,10 +207,12 @@ class MainAktivity : AppCompatActivity() {
                             var subInterval = state.intervalSubscription
                             var subBeaconBind = state.beaconBindSubscription
                             var rangedBeacons = state.rangedBeacons
+                            var startBatteryPct = state.startBatterytPct
                             when (event.state) {
                                 0 -> {
                                     // ready -> running
                                     btAdapter.enable()
+                                    optionsMenu?.setGroupVisible(R.id.menu_group, false)
                                     rangedBeacons = emptyList()
                                     fab.backgroundTintList = resources.getColorStateList(R.color.main_fab_running_colour)
                                     fab.setImageDrawable(resources.getDrawable(R.mipmap.ic_stop_white_36dp))
@@ -229,7 +236,7 @@ class MainAktivity : AppCompatActivity() {
                                     subBeaconBind = this@MainAktivity.
                                             rxBindAltBeaconManager(scanOn.toLong(), scanOff.toLong()).
                                             flatMap { it ->
-                                                when(it) {
+                                                when (it) {
                                                     is AltBeaconServiceConnectEvent -> it.beaconManager.rxNotifyInRange()
                                                     else -> Observable.error<RangeBeaconsInRegion>(UnsupportedOperationException("Expected 'AltBeaconServiceConnectEvent'"))
                                                 }
@@ -239,11 +246,17 @@ class MainAktivity : AppCompatActivity() {
                                             }.
                                             map { it -> RangedBeacon(it) }.
                                             buffer(1, TimeUnit.SECONDS).
-//                                            filter { it -> it.isNotEmpty() }.
+                                            //                                            filter { it -> it.isNotEmpty() }.
                                             map { it -> OnBeaconsInRange(it) }.
                                             subscribe(reducer)
                                     compositeSubscriptions.add(subBeaconBind)
                                     //
+                                    // Battery Percent
+                                    val filter = IntentFilter(Intent.ACTION_BATTERY_CHANGED)
+                                    val batteryState = registerReceiver(null, filter)
+                                    val batteryLevel = batteryState.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
+                                    val batteryScale = batteryState.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
+                                    startBatteryPct = batteryLevel.toFloat() / batteryScale.toFloat()
                                 }
                                 1 -> {
                                     // running -> stopped
@@ -257,7 +270,10 @@ class MainAktivity : AppCompatActivity() {
                                 }
                                 2 -> {
                                     //stopped -> ready
+                                    optionsMenu?.setGroupVisible(R.id.menu_group, true)
                                     btAdapter.disable()
+                                    num_ranged_beacons.text = "0"
+                                    battery_level.text = "${batteryLevelFormat.format(0f)}"
                                     clock.setTextColor(resources.getColor(android.R.color.primary_text_light))
                                     fab.backgroundTintList = resources.getColorStateList(R.color.main_fab_ready_colour)
                                     fab.setImageDrawable(resources.getDrawable(R.mipmap.ic_play_arrow_white_36dp))
@@ -269,14 +285,15 @@ class MainAktivity : AppCompatActivity() {
                             }
                             fab.tag = (event.state + 1) % 3
                             //
-                            State(selectedProfile = state?.selectedProfile,
-                                    btState = state?.btState,
+                            State(selectedProfile = state.selectedProfile,
+                                    btState = state.btState,
                                     fabState = event,
-                                    timerIntervalState = state?.timerIntervalState,
-                                    scrollEventState = state?.scrollEventState,
+                                    timerIntervalState = state.timerIntervalState,
+                                    scrollEventState = state.scrollEventState,
                                     intervalSubscription = subInterval,
                                     beaconBindSubscription = subBeaconBind,
-                                    rangedBeacons = rangedBeacons)
+                                    rangedBeacons = rangedBeacons,
+                                    startBatterytPct = startBatteryPct)
                         }
                         is OnTimerIntervalUpdated -> {
                             val start = event.startTime
@@ -286,17 +303,18 @@ class MainAktivity : AppCompatActivity() {
                             val p = Period(now, end)
                             clock.text = p.toString(periodFormatter)
                             if (now.isEqual(end) || now.isAfter(end)) {
-                              reducer.onNext(OnFabClicked(1))
+                                reducer.onNext(OnFabClicked(1))
                             }
                             //
-                            State(selectedProfile = state?.selectedProfile,
-                                    btState = state?.btState,
-                                    fabState = state?.fabState,
+                            State(selectedProfile = state.selectedProfile,
+                                    btState = state.btState,
+                                    fabState = state.fabState,
                                     timerIntervalState = event,
-                                    scrollEventState = state?.scrollEventState,
-                                    intervalSubscription = state?.intervalSubscription,
-                                    beaconBindSubscription = state?.beaconBindSubscription,
-                                    rangedBeacons = state?.rangedBeacons)
+                                    scrollEventState = state.scrollEventState,
+                                    intervalSubscription = state.intervalSubscription,
+                                    beaconBindSubscription = state.beaconBindSubscription,
+                                    rangedBeacons = state.rangedBeacons,
+                                    startBatterytPct = state.startBatterytPct)
                         }
                         is OnScanProfilesFetched -> {
                             val profiles = event.profiles
@@ -306,10 +324,10 @@ class MainAktivity : AppCompatActivity() {
                                 val duration = SettingsAktivity.translatePositionTestDuration(selectedProfile.testDuration)
                                 setClockText(DateTime.now(), duration)
                                 State(selectedProfile = selectedProfile,
-                                        btState = state?.btState,
-                                        fabState = state?.fabState,
-                                        timerIntervalState = state?.timerIntervalState,
-                                        scrollEventState = state?.scrollEventState)
+                                        btState = state.btState,
+                                        fabState = state.fabState,
+                                        timerIntervalState = state.timerIntervalState,
+                                        scrollEventState = state.scrollEventState)
                             } else {
                                 acc
                             }
@@ -317,31 +335,46 @@ class MainAktivity : AppCompatActivity() {
                         is OnBeaconsInRange -> {
                             d("Ranged ${event.beacons.size}")
                             num_ranged_beacons.text = "${event.beacons.size}/${state.rangedBeacons.size}"
-                            for (beacon: RangedBeacon in event.beacons) {
-                                val contains = state?.rangedBeacons.contains(beacon)
-                                d("Ranged {contains=${contains}}")
-                                if (contains) {
-                                    val rangingTimeout = SettingsAktivity.translatePositionRangingTimeout(state.selectedProfile?.rangingTimeout ?: 0)
-                                    val lastSeen = state?.rangedBeacons[state?.rangedBeacons.indexOf(beacon)].lastUpdate
-                                    val now = DateTime.now()
-                                    val duration = Duration(lastSeen, now)
-                                    d("Ranged beacon {beacon=${beacon.beacon.bluetoothAddress},last=${duration.millis},timeout=${rangingTimeout}}")
-                                    if (duration.millis > rangingTimeout) {
-                                        e("Ranged beacon '${beacon.beacon.bluetoothAddress}' exceeded timeout {last=${lastSeen}}")
-                                    }
+                            val rangingTimeout = SettingsAktivity.translatePositionRangingTimeout(state.selectedProfile?.rangingTimeout ?: 0)
+                            for (beacon: RangedBeacon in state.rangedBeacons) {
+                                val lastSeen = beacon.lastUpdate
+                                val now = DateTime.now()
+                                val duration = Duration(lastSeen, now)
+                                d("Ranged beacon {beacon=${beacon.beacon.bluetoothAddress},last=${duration.millis},timeout=${rangingTimeout}}")
+                                if (duration.millis > rangingTimeout) {
+                                    e("Ranged beacon '${beacon.beacon.bluetoothAddress}' exceeded timeout {last=${lastSeen}}")
+                                    val snackbar = Snackbar.make(activity_main, "Beacon ${beacon.beacon.bluetoothAddress} timeout exceeded", Snackbar.LENGTH_INDEFINITE)
+                                    snackbar.show()
+                                    val snackbarView = snackbar.view
+                                    snackbarView.setBackgroundColor(resources.getColor(R.color.snackbar_alert))
+                                    reducer.onNext(OnFabClicked(1))
                                 }
                             }
+                            //
+                            // Battery Percent
+                            val filter = IntentFilter(Intent.ACTION_BATTERY_CHANGED)
+                            val batteryState = registerReceiver(null, filter)
+                            val batteryStatus = batteryState.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
+                            val isCharging = batteryStatus == BatteryManager.BATTERY_STATUS_CHARGING ||
+                                    batteryStatus == BatteryManager.BATTERY_STATUS_FULL
+                            val batteryLevel = batteryState.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
+                            val batteryScale = batteryState.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
+                            var endBatteryPct = batteryLevel.toFloat() / batteryScale.toFloat()
+                            battery_level.text = if (isCharging) "-%" else "${batteryLevelFormat.format(state.startBatterytPct - endBatteryPct)}"
+                            //
+                            //
                             val listBeacons: MutableList<RangedBeacon> = mutableListOf()
                             listBeacons.addAll(event.beacons)
                             listBeacons.addAll(state.rangedBeacons)
-                            State(selectedProfile = state?.selectedProfile,
-                                    btState = state?.btState,
-                                    fabState = state?.fabState,
-                                    timerIntervalState = state?.timerIntervalState,
-                                    scrollEventState = state?.scrollEventState,
-                                    intervalSubscription = state?.intervalSubscription,
-                                    beaconBindSubscription = state?.beaconBindSubscription,
-                                    rangedBeacons = listBeacons.toSet().toList())
+                            State(selectedProfile = state.selectedProfile,
+                                    btState = state.btState,
+                                    fabState = state.fabState,
+                                    timerIntervalState = state.timerIntervalState,
+                                    scrollEventState = state.scrollEventState,
+                                    intervalSubscription = state.intervalSubscription,
+                                    beaconBindSubscription = state.beaconBindSubscription,
+                                    rangedBeacons = listBeacons.toSet().toList(),
+                                    startBatterytPct = state.startBatterytPct)
                         }
                         else -> acc
                     }
@@ -360,9 +393,9 @@ class MainAktivity : AppCompatActivity() {
                 })
         compositeSubscriptions.add(sub1)
 
-//        if (!checkBluetoothAdapter()) {
-//            return
-//        }
+        //        if (!checkBluetoothAdapter()) {
+        //            return
+        //        }
 
         val isLeReceiver = true
 
@@ -447,6 +480,7 @@ class MainAktivity : AppCompatActivity() {
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         super.onCreateOptionsMenu(menu)
         getMenuInflater().inflate(R.menu.main_menu, menu)
+        optionsMenu = menu
         return true
     }
 
@@ -461,10 +495,10 @@ class MainAktivity : AppCompatActivity() {
                 val intent = Intent(this, SettingsAktivity::class.java)
                 startActivity(intent)
             }
-            R.id.menu_item_profiles -> {
-                val intent = Intent(this, ProfileLayoutsAktivity::class.java)
-                startActivity(intent)
-            }
+//            R.id.menu_item_profiles -> {
+//                val intent = Intent(this, ProfileLayoutsAktivity::class.java)
+//                startActivity(intent)
+//            }
             R.id.menu_scan_profiles -> {
                 val intent = Intent(this, ScanProfileAktivity::class.java)
                 startActivity(intent)
