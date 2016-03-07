@@ -13,6 +13,7 @@ import android.support.v7.widget.RecyclerView
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import com.github.mitchwongho.android.beacon.R
 import com.github.mitchwongho.android.beacon.bluetooth.rx.advertise
 import com.github.mitchwongho.android.beacon.content.*
@@ -320,6 +321,7 @@ class MainAktivity : AppCompatActivity() {
                             val profiles = event.profiles
                             recyclerAdapter.updateDataSet(profiles)
                             if (profiles.isNotEmpty()) {
+                                fab.visibility = View.VISIBLE
                                 val selectedProfile = profiles.first()
                                 val duration = SettingsAktivity.translatePositionTestDuration(selectedProfile.testDuration)
                                 setClockText(DateTime.now(), duration)
@@ -329,6 +331,7 @@ class MainAktivity : AppCompatActivity() {
                                         timerIntervalState = state.timerIntervalState,
                                         scrollEventState = state.scrollEventState)
                             } else {
+                                fab.visibility = View.GONE
                                 acc
                             }
                         }
@@ -491,10 +494,10 @@ class MainAktivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         super.onOptionsItemSelected(item)
         when (item.itemId) {
-            R.id.menu_item_settings -> {
-                val intent = Intent(this, SettingsAktivity::class.java)
-                startActivity(intent)
-            }
+//            R.id.menu_item_settings -> {
+//                val intent = Intent(this, SettingsAktivity::class.java)
+//                startActivity(intent)
+//            }
 //            R.id.menu_item_profiles -> {
 //                val intent = Intent(this, ProfileLayoutsAktivity::class.java)
 //                startActivity(intent)
